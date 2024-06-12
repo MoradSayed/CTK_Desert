@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "CTK_Desert"
+version = "0.0.67"
+dependencies = [
+  "customtkinter>=5.2.0,<6.0.0", 
+  "Pillow>=9.4.0,<11.0.0", 
+  "numpy>=1.23.5,<2.0.0",
+  "pywin32>=305,<310"
+]
+requires-python = ">=3.8,<4.0"
+license = {file = "LICENSE"} # "LICENSE" is name of the license file, which must be in root of project folder
+authors = [
+  { name="Morad Sayed", email="Morad.S.Singer@gmail.com" },
+]
+description = "A GUI that uses the customtkinter library to create GUIs based on your need, so that you focus on the functionality of your application and not the design."
+readme = "README.md"
+keywords = ["CTK_Desert", "tkinter", "Customtkinter", "GUI", "APP", "beautiful", "design", "easy", "simple", "fast", "CTK"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3 :: Only",
+    "License :: Other/Proprietary License",
+    "Operating System :: Microsoft :: Windows",
+]
+
+[tool.setuptools.package-data]
+"CTK_Desert" = ["*.json"]
+"CTK_Desert.images" = ["*.ico", "*.png"]
+"CTK_Desert.images.Icons" = ["*.png"]
+
