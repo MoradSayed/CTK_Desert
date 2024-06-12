@@ -17,9 +17,7 @@ class Desert(ctk.CTk):
             if os.path.samefile(os.path.dirname(os.path.abspath(caller_module.__file__)), os.getcwd()):
                 pass                        
             else:
-                print(os.path.dirname(os.path.abspath(caller_module.__file__)))
-                print(os.getcwd())
-                raise Exception("Desert can only be called from the main script")
+                os.chdir(os.path.dirname(os.path.abspath(caller_module.__file__)))
                 
         if os.path.isdir(assets_dir):
             pass
