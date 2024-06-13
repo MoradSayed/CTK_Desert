@@ -1,0 +1,48 @@
+name: Publish Python Package to PyPI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  pypi-publish:
+    name: upload release to PyPI
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      id-token: write
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v3
+
+      - name: Verify Commit Author
+        id: verify
+        run: |
+          COMMIT_AUTHOR=$(git log -1 --pretty=format:'%an')
+          TRUSTED_USERS=("MoradSayed")
+          if [[ ! " ${TRUSTED_USERS[@]} " =~ " ${COMMIT_AUTHOR} " ]]; then
+            echo "Commit author ${COMMIT_AUTHOR} is not trusted. Exiting..."
+            exit 1
+          fi
+        shell: bash
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build
+
+      - name: Build the package
+        run: |
+          python -m build
+
+      - name: Publish package distributions to PyPI
+        if: contains(github.event.head_commit.message, '[publish]') && steps.verify.conclusion == 'success'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          verbose: true
