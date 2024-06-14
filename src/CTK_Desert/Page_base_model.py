@@ -19,6 +19,7 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.Scrollable_fra
         self.parent = Chest.PageParent
         super().__init__(self.parent, fg_color="transparent")
 
+        self.widget_str = str(self)
         self.scrollable = scrollable
         self.key = 0            # doesn't allow the execution of the "Page_update_manager" function untill the page is opened from the "tab frame page" >> self.key = 1
         self.openable = True
@@ -84,7 +85,7 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.Scrollable_fra
                     self.Scrollable_canvas.unbind_all("<MouseWheel>")
             
     def scrolling_action(self, event):
-        if str(event.widget).startswith('.!frame.!ctkframe2'):
+        if str(event.widget).startswith(self.widget_str):
             self.Scrollable_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
     
     def Starting(self): # this function is called only once when the page is opened for the first time
