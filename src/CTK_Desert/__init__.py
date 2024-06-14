@@ -24,6 +24,7 @@ class Desert(ctk.CTk):
         else:
             raise FileNotFoundError(f"Directory '{assets_dir}' not found")
         
+        # ctk.set_window_scaling(1.25)  # window geometry dimensions #!investigate (to use instead of the scale factor variable)
         self.title("")
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()

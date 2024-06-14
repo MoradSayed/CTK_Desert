@@ -12,6 +12,7 @@ class Dialog(ctk.CTkToplevel):
         self.ugliest_color = "#4A412A"
         super().__init__(parent, fg_color=backgroundColor)
 
+        self.scaleFactor = windll.shcore.GetScaleFactorForDevice(0) / 100
         self.parent = parent
         self.dialogs = {}
         self.current_dialog = None
@@ -42,23 +43,26 @@ class Dialog(ctk.CTkToplevel):
 
     def new(self, tag: str, 
             text: str = "Are you sure?", font: tuple = (FONT_B, 20), 
-            button_text: str = "Confirm", button_color: str | tuple = (LIGHT_MODE["accent"], DARK_MODE["accent"]), button_function: Callable = lambda: None):
+            button_text: str = "Confirm", button_font = (FONT, 18), button_color: str | tuple = (LIGHT_MODE["accent"], DARK_MODE["accent"]), button_function: Callable = lambda: None):
 
-        frame = ctk.CTkFrame(self.parent, fg_color=self.dialog_color, width = 600, height = 400, corner_radius=15, border_width=2, border_color=button_color)
-        _frame_cutout = ctk.CTkFrame(self, fg_color=self.ugliest_color, width = 600, height = 400, corner_radius=15, border_width=2, border_color=self.ugliest_color)
+        frame = ctk.CTkFrame(self.parent, fg_color=self.dialog_color, corner_radius=10, border_width=2, border_color=button_color)    # the border grows inwards, so we don't need to account for it later on
+
         #^ Label
-        label = ctk.CTkLabel(frame, text=text, font=font, wraplength=0.8*600)
-        label.place(relx = 0.1, rely=0.1, relwidth=0.8, relheight=0.64)
-        
-        #^ Buttons
-        buttons_frame = ctk.CTkFrame(frame, fg_color="transparent")
-        cancel_button = ctk.CTkButton(buttons_frame, text="Cancel", command=self._hide, font=font, fg_color=(LIGHT_MODE["primary"], DARK_MODE["primary"]), hover_color=(hvr_clr_g(LIGHT_MODE["primary"], "l"), hvr_clr_g(DARK_MODE["primary"], "d")))
-        cancel_button.pack(expand=True, side="left", padx=10)
-        Confirm_button = ctk.CTkButton(buttons_frame, text=button_text, command=lambda func = button_function: self._button_function(func), font=font, 
-                                       fg_color=button_color, hover_color=(hvr_clr_g(button_color[0], "l", 10), hvr_clr_g(button_color[1], "d", )))
-        Confirm_button.pack(expand=True, side="right", padx=10)
-        buttons_frame.place(relx = 0.1, rely=0.64, relwidth=0.8, relheight=0.26)
+        label = ctk.CTkLabel(frame, text=text, font=font, wraplength=450, anchor="w", justify="left")
+        label.grid(row = 0, column = 0, sticky = "nsw", pady = 20, padx=(25, 20), ipadx = 18)
 
+        #^ Buttons
+        buttons_frame = ctk.CTkFrame(frame, fg_color= "transparent")
+        cancel_button = ctk.CTkButton(buttons_frame, text="Cancel", command=self._hide, font=button_font,
+                                      fg_color=(LIGHT_MODE["primary"], DARK_MODE["primary"]), hover_color=(hvr_clr_g(LIGHT_MODE["primary"], "l"), hvr_clr_g(DARK_MODE["primary"], "d")))
+        cancel_button.pack(expand=True, side="left", padx=10)
+        Confirm_button = ctk.CTkButton(buttons_frame, text=button_text, command=lambda func = button_function: self._button_function(func), font=button_font,
+                                       fg_color=button_color, hover_color=(hvr_clr_g(button_color[0], "l", 10), hvr_clr_g(button_color[1], "d", 10)))
+        Confirm_button.pack(expand=True, side="right", padx=10)
+        buttons_frame.grid(row = 1, column = 0, sticky = "ne", pady = (2, 15), padx = 10)
+
+        frame.update()
+        _frame_cutout = ctk.CTkFrame(self, fg_color=self.ugliest_color, width = frame.winfo_reqwidth()/self.scaleFactor, height = frame.winfo_reqheight()/self.scaleFactor, corner_radius=10)   # the border grows inwards, so we don't need to account for it
         if tag != None:
             self.dialogs[tag] = (frame, _frame_cutout)
 
@@ -68,8 +72,7 @@ class Dialog(ctk.CTkToplevel):
 
     def show(self, dialog):
         # self.parent.wm_attributes("-disabled", 1)
-        scaleFactor = windll.shcore.GetScaleFactorForDevice(0) / 100
-        self.geometry(f"{int(self.parent.winfo_width()/scaleFactor)}x{int(self.parent.winfo_height()/scaleFactor)}+{self.parent.winfo_x()}+{self.parent.winfo_y()}")
+        self.geometry(f"{int(self.parent.winfo_width()/self.scaleFactor)}x{int(self.parent.winfo_height()/self.scaleFactor)}+{self.parent.winfo_x()}+{self.parent.winfo_y()}")
         
         self.deiconify()
         self.bind("<Configure>", self.move_me)

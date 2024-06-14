@@ -1,3 +1,4 @@
+from ctypes import windll
 class Chest():
     def _D__Setup_Chest(self, window, frame):
             from .Tab_Page_Frame import Frame
@@ -11,6 +12,7 @@ class Chest():
             self.userPagesDirectory = self.Manager.U_Pages_dir
             self.toolsFrame = self.Manager.apps_frame
             self.Dialog_Manager = self.Manager.dialog_widget
+            self.scaleFactor = windll.shcore.GetScaleFactorForDevice(0) / 100
 
     def get_current_page(self):
         """Returns the Displayed Page name
