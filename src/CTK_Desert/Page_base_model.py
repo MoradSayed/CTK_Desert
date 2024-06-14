@@ -79,10 +79,13 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.Scrollable_fra
                 # Check if the height of the contents is greater than the height of the frame, to determine if the scrolling function should be on or not
                 if self.max_height > self.winfo_height():
                     # using bind_all to make the scrolling function work even on the children of the canvas
-                    self.Scrollable_canvas.bind_all("<MouseWheel>", lambda event: self.Scrollable_canvas.yview_scroll(int(-1*(event.delta/120)), "units")) 
+                    self.Scrollable_canvas.bind_all("<MouseWheel>", lambda event: self.scrolling_action(event)) 
                 else:
                     self.Scrollable_canvas.unbind_all("<MouseWheel>")
             
+    def scrolling_action(self, event):
+        if str(event.widget).startswith('.!frame.!ctkframe2'):
+            self.Scrollable_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
     
     def Starting(self): # this function is called only once when the page is opened for the first time
         self.menu_frame = self.tool_menu()
@@ -108,7 +111,7 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.Scrollable_fra
                 self.Page_update_manager()
             else:
                 if self.max_height > self.winfo_height():
-                    self.Scrollable_canvas.bind_all("<MouseWheel>", lambda event: self.Scrollable_canvas.yview_scroll(int(-1*(event.delta/120)), "units")) 
+                    self.Scrollable_canvas.bind_all("<MouseWheel>", lambda event: self.scrolling_action(event)) 
                 else:
                     self.Scrollable_canvas.unbind_all("<MouseWheel>")
                 
