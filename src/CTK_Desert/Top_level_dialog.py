@@ -9,6 +9,7 @@ class Dialog(ctk.CTkToplevel):
     def __init__(self, parent):
         backgroundColor = "#000000"
         self.dialog_color = "#8E908F"
+        self.ugliest_color = "#4A412A"
         super().__init__(parent, fg_color=backgroundColor)
 
         self.parent = parent
@@ -19,8 +20,9 @@ class Dialog(ctk.CTkToplevel):
         self.resizable(False, False)
         self.transient(parent)
         self.attributes('-toolwindow', True)
-        self.protocol("WM_DELETE_WINDOW", self._hide)
+        # self.protocol("WM_DELETE_WINDOW", self._hide)
         self.attributes('-alpha', 0.98)
+        self.attributes('-transparentcolor', self.ugliest_color)
         windll.dwmapi.DwmSetWindowAttribute(windll.user32.GetParent(self.winfo_id()), 35, byref(c_int(hex_to_0x(backgroundColor))), sizeof(c_int))
         self.iconbitmap(os.path.join(os.path.dirname(__file__), "images/empty.ico"))
 
@@ -38,9 +40,12 @@ class Dialog(ctk.CTkToplevel):
     def move_me(self, _):
         self.parent.geometry(f'+{self.winfo_x()}+{self.winfo_y()}')
 
-    def new(self, tag: str = None, text: str = "Are you sure?", font: tuple = (FONT_B, 20), button_text: str = "Confirm", button_color: str | tuple = (LIGHT_MODE["accent"], DARK_MODE["accent"]), button_function: Callable = lambda: None):
+    def new(self, tag: str, 
+            text: str = "Are you sure?", font: tuple = (FONT_B, 20), 
+            button_text: str = "Confirm", button_color: str | tuple = (LIGHT_MODE["accent"], DARK_MODE["accent"]), button_function: Callable = lambda: None):
 
-        frame = ctk.CTkFrame(self, fg_color=self.dialog_color, width = 600, height = 400, corner_radius=15, border_width=2, border_color=button_color)
+        frame = ctk.CTkFrame(self.parent, fg_color=self.dialog_color, width = 600, height = 400, corner_radius=15, border_width=2, border_color=button_color)
+        _frame_cutout = ctk.CTkFrame(self, fg_color=self.ugliest_color, width = 600, height = 400, corner_radius=15, border_width=2, border_color=self.ugliest_color)
         #^ Label
         label = ctk.CTkLabel(frame, text=text, font=font, wraplength=0.8*600)
         label.place(relx = 0.1, rely=0.1, relwidth=0.8, relheight=0.64)
@@ -55,27 +60,29 @@ class Dialog(ctk.CTkToplevel):
         buttons_frame.place(relx = 0.1, rely=0.64, relwidth=0.8, relheight=0.26)
 
         if tag != None:
-            self.dialogs[tag] = frame
+            self.dialogs[tag] = (frame, _frame_cutout)
 
     def _button_function(self, func: Callable):
         func()
         self._hide()
 
     def show(self, dialog):
-        self.parent.wm_attributes("-disabled", 1)
+        # self.parent.wm_attributes("-disabled", 1)
         scaleFactor = windll.shcore.GetScaleFactorForDevice(0) / 100
         self.geometry(f"{int(self.parent.winfo_width()/scaleFactor)}x{int(self.parent.winfo_height()/scaleFactor)}+{self.parent.winfo_x()}+{self.parent.winfo_y()}")
         
         self.deiconify()
         self.bind("<Configure>", self.move_me)
         self.current_dialog = dialog
-        self.dialogs[dialog].place(relx = 0.5, rely = 0.45, anchor="center")
+        self.dialogs[dialog][0].place(relx = 0.5, rely = 0.45, anchor="center")
+        self.dialogs[dialog][1].place(relx = 0.5, rely = 0.45, anchor="center")
 
     def _hide(self):
-        self.dialogs[self.current_dialog].place_forget()
+        self.dialogs[self.current_dialog][0].place_forget()
+        self.dialogs[self.current_dialog][1].place_forget()
         self.update()
         self.unbind("<Configure>")
-        self.parent.wm_attributes("-disabled", 0)
+        # self.parent.wm_attributes("-disabled", 0)
         self.withdraw()
         self.current_dialog = None
         
