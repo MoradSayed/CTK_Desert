@@ -54,6 +54,7 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.Scrollable_fra
             self.Scrollable_frame = ctk.CTkFrame(self, fg_color=color, bg_color=(LIGHT_MODE["background"], DARK_MODE["background"]))
             self.Scrollable_frame.pack(fill="both", expand=True)
 
+        self.menu_frame = self.tool_menu()
 
     def Page_update_manager(self, k=0, update_with_extend = True): #it updates the height of the page and the scrollable region
         self.key = k if k else self.key
@@ -89,7 +90,6 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.Scrollable_fra
             self.Scrollable_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
     
     def Starting(self): # this function is called only once when the page is opened for the first time
-        self.menu_frame = self.tool_menu()
         self.menu_frame.place(relx=0.5, rely=0.5, anchor="center")
         
         for func in self.starting_call_list:
@@ -142,6 +142,15 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.Scrollable_fra
             self.Scrollable_canvas.unbind_all("<MouseWheel>")
         return state 
            
+    def tool_menu(self):
+        self.tools_f = ctk.CTkFrame(Chest.toolsFrame, fg_color="transparent")
+        return self.tools_f
+
+    def add_menu_button(self, icon_path, command, size = (40, 40)):
+        button_image = change_pixel_color(icon_path, color=f'{ICONS["_l"]}+{ICONS["_d"]}', return_img=True)
+        button_image = ctk.CTkImage(*button_image, size=size)
+        ctk.CTkButton(self.tools_f, text="", fg_color="transparent", hover_color=Chest.Manager.menu_frame._fg_color, image=button_image, 
+                      command=command, ).pack()
 
     def get_scrframe_color(self):
         color = self.Scrollable_frame._fg_color

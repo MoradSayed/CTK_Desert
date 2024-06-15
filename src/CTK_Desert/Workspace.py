@@ -4,7 +4,6 @@ import os, inspect
 from .Core import userChest as Chest
 from .Page_base_model import Page_BM
 from .Theme import *
-from .utils import hvr_clr_g, change_pixel_color
 from .Widgits import C_Widgits, large_tabs
 
 from .AddPage import AddPage
@@ -15,9 +14,10 @@ class Workspace(Page_BM):
         super().__init__(scrollable=True, start_func=self.on_start)
         self.menu_page_frame = Chest.Manager
         self.frame = self.Scrollable_frame # Parent of all children in this page
-        self.frame.configure(fg_color = (hvr_clr_g(LIGHT_MODE["background"], "l"), hvr_clr_g(DARK_MODE["background"], "d")))
         self.mode = ctk.get_appearance_mode()
         self.frame_clr = self.get_scrframe_color()
+        self.add_menu_button(r"C:\Users\Morad\Downloads\icons8-reload-64.png", lambda: Chest.reload_page("Workspace"))
+
         self.icons_path = Chest.Manager.original_icons_dir
         Chest.Store_SubPage("Workspace", AddPage)
         self.cwdgs = C_Widgits(self, self.frame)
@@ -62,14 +62,4 @@ class Workspace(Page_BM):
                                      button_function=lambda: Chest.Manager.delete_page(page_name))
         Chest.Dialog_Manager.show(f"{page_name}+deletion")
 
-    def tool_menu(self):
-        self.tool_p_f = self.menu_page_frame.apps_frame
-        self.tools_f = ctk.CTkFrame(self.tool_p_f, fg_color="transparent")
-
-        reload_image = change_pixel_color(r"C:\Users\Morad\Downloads\icons8-reload-64.png", color=f'{ICONS["_l"]}+{ICONS["_d"]}', return_img=True)
-        reload_image = ctk.CTkImage(*reload_image, size=(45, 45))
-        ctk.CTkButton(self.tools_f, text="", fg_color="transparent", hover_color=self.frame_clr, image=reload_image, 
-                      command=lambda: Chest.reload_page("Workspace"), ).pack()
-        
-        return self.tools_f
 

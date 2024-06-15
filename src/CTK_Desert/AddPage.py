@@ -2,7 +2,7 @@ import customtkinter as ctk
 from .Core import userChest as Chest
 from .Page_base_model import Page_BM
 from .Theme import *
-from .utils import hvr_clr_g, change_pixel_color
+from .utils import hvr_clr_g
 from .Widgits import C_Widgits
 from .Theme import *
 import os
@@ -16,12 +16,12 @@ class AddPage(Page_BM):
         super().__init__(start_func=self.on_start, pick_func=self.on_pick, update_func=self.on_update, leave_func=self.on_leave)
         self.menu_page_frame = Chest.Manager
         self.frame = self.Scrollable_frame # Parent of all children in this page
-        self.frame.configure(fg_color = (hvr_clr_g(LIGHT_MODE["background"], "l"), hvr_clr_g(DARK_MODE["background"], "d")))
         self.mode = ctk.get_appearance_mode()
         self.frame_clr = self.get_scrframe_color()
         self.pages_path = Chest.userPagesDirectory
         self.icon_names = ["_d_s", "_d", "_l_s", "_l"]
         self.icon_path = None
+        self.add_menu_button(r"C:\Users\Morad\Downloads\icons8-reload-64.png", lambda: Chest.reload_page("Workspace.AddPage"))
 
         self.ws_label = ctk.CTkLabel(self.frame, text="New", font=(FONT_B, 40))
         self.ws_label.pack(fill="x", padx=20, pady=20)
@@ -54,18 +54,6 @@ class AddPage(Page_BM):
     def on_leave(self, event):
         return True
     
-    def tool_menu(self):
-        self.tool_p_f = self.menu_page_frame.apps_frame
-        self.tools_f = ctk.CTkFrame(self.tool_p_f, fg_color="transparent")
-
-        reload_image_l = change_pixel_color(r"C:\Users\Morad\Downloads\icons8-reload-64.png", color=ICONS["_l"], return_img=True)
-        reload_image_d = change_pixel_color(r"C:\Users\Morad\Downloads\icons8-reload-64.png", color=ICONS["_d"], return_img=True)
-        reload_image = ctk.CTkImage(reload_image_l, reload_image_d, size=(45, 45))
-        ctk.CTkButton(self.tools_f, text="", fg_color="transparent", hover_color=self.frame_clr, image=reload_image, 
-                      command=lambda: Chest.reload_page("Workspace.AddPage"), ).pack()
-        
-        return self.tools_f
-
     def get_icon_path(self):
         filetypes = ( ('images', '*.png'), ('All files', '*.*') )
         f = fd.askopenfile(filetypes=filetypes, title="Pick an icon")

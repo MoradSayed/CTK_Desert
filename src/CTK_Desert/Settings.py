@@ -7,7 +7,6 @@ from .Core import userChest as Chest
 from .Page_base_model import Page_BM
 from .Theme import *
 from .Widgits import C_Widgits
-from .utils import hvr_clr_g
 
 
 # don't ever pack the frame, it will be packed in the Tab_Page_Frame.py
@@ -18,7 +17,6 @@ class Settings(Page_BM):
         self.menu_page_frame = Chest.Manager
         self.on_theme_change_func = on_TC_func
         self.frame = self.Scrollable_frame
-        self.frame.configure(fg_color = (hvr_clr_g(LIGHT_MODE["background"], "l"), hvr_clr_g(DARK_MODE["background"], "d")))
         self.addables_frame = ctk.CTkFrame(self.frame, fg_color="transparent")
         self.c_wdgts = C_Widgits(page_class = self, parent = self.addables_frame)
         self.test_num = 0
@@ -83,12 +81,6 @@ class Settings(Page_BM):
     
     def on_leave(self, event):
         return True
-
-    def tool_menu(self):
-        self.tool_p_f = self.menu_page_frame.apps_frame
-        self.tools_f = ctk.CTkFrame(self.tool_p_f, fg_color="transparent")
-
-        return self.tools_f
 
     def test_func(self):
         if self.test_num == 0:
