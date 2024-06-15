@@ -58,8 +58,8 @@ class Workspace(Page_BM):
     def delete(self, page_name):
         if f"{page_name}+deletion" not in Chest.Dialog_Manager.dialogs:
             # print("creating a new dialog frame")
-            Chest.Dialog_Manager.new(tag=f"{page_name}+deletion", text=f"Are you sure you want to delete {page_name}?", button_text="Delete", 
-                                     button_color=(LIGHT_MODE["warning"], DARK_MODE["warning"]), button_function=lambda: Chest.Manager.delete_page(page_name))
+            Chest.Dialog_Manager.new(tag=f"{page_name}+deletion", icon="danger", text=f"Are you sure you want to delete {page_name}?", button_text="Delete", 
+                                     button_function=lambda: Chest.Manager.delete_page(page_name))
         Chest.Dialog_Manager.show(f"{page_name}+deletion")
 
     def tool_menu(self):

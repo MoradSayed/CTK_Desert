@@ -47,10 +47,9 @@ def hvr_clr_g(color, mode, gain=20):
 import numpy as np
 import os, copy
 from PIL import Image
-from CTK_Desert.Theme import ICONS
 from methodtools import lru_cache
 
-@lru_cache(maxsize=10)
+@lru_cache(maxsize=15)
 def change_pixel_color(icon_path, color, return_img=False):
     # print("Changing")
     """change the color of a filled icon to the target color
@@ -74,7 +73,7 @@ def change_pixel_color(icon_path, color, return_img=False):
     for i in range(n_range):
         #chack if the color is rgb or hex if hex convert it to rgb
         if color[i][0] == "#":
-            color[i] = tuple(int(color[i][i:i+2], 16) for i in (1, 3, 5))
+            color[i] = tuple(int(color[i][xx:xx+2], 16) for xx in (1, 3, 5))
         elif color[i][0] == "(":
             color[i] = tuple(int(xx) for xx in color[i][1:-1].split(","))
 

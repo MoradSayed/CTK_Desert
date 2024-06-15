@@ -2,6 +2,7 @@ import customtkinter as ctk
 from ctypes import byref, c_int, sizeof, windll
 from typing import Callable 
 import os, random
+from PIL import Image, ImageTk
 from .Theme import *
 from .utils import hvr_clr_g
 
@@ -15,6 +16,7 @@ class Dialog(ctk.CTkToplevel):
         self.scaleFactor = windll.shcore.GetScaleFactorForDevice(0) / 100
         self.parent = parent
         self.dialogs = {}
+        self.images = {}
         self.current_dialog = None
 
         self.title("")
@@ -42,14 +44,35 @@ class Dialog(ctk.CTkToplevel):
         self.parent.geometry(f'+{self.winfo_x()}+{self.winfo_y()}')
 
     def new(self, tag: str, 
-            text: str = "Are you sure?", font: tuple = (FONT_B, 20), 
+            text: str = "Are you sure?", icon: str = None, font: tuple = (FONT_B, 20), 
             button_text: str = "Confirm", button_font = (FONT, 18), button_color: str | tuple = (LIGHT_MODE["accent"], DARK_MODE["accent"]), button_function: Callable = lambda: None):
 
-        frame = ctk.CTkFrame(self.parent, fg_color=self.dialog_color, corner_radius=10, border_width=2, border_color=button_color)    # the border grows inwards, so we don't need to account for it later on
+        frame = ctk.CTkFrame(self.parent, fg_color=self.dialog_color, corner_radius=10, border_width=2)    # the border grows inwards, so we don't need to account for it later on
+        
+        #^ icon
+        if icon != None:
+            icon_size = (font[1]+10, font[1]+10)
+            icon_exist = 1
+            if type(icon) == str:
+                if icon not in ICONS:
+                    raise ValueError(f"{icon} not a valid icon name")
+                button_color = (LIGHT_MODE[icon], DARK_MODE[icon])
+                frame.configure(border_color = button_color)
+                if icon not in self.images:
+                    image = ICONS[icon]()
+                    self.images[icon]=((ImageTk.PhotoImage(image[0].resize(icon_size)), ImageTk.PhotoImage(image[1].resize(icon_size))))  #! need to add dynamic modes (Light and Dark modes)
+            
+            canvas = ctk.CTkCanvas(frame, bg=frame._fg_color, bd=0, highlightthickness=0, relief='ridge', width=icon_size[0], height=icon_size[1])
+            canvas.create_image(0, 0, anchor="nw", image=self.images[icon][0 if ctk.get_appearance_mode() == "light" else 1])
+            canvas.grid(row = 0, column = 0, sticky = "ew", pady = 20, padx=(25, 15))
+        else:
+            icon_exist = 0
+            frame.configure(border_color = button_color)
+
 
         #^ Label
         label = ctk.CTkLabel(frame, text=text, font=font, wraplength=450, anchor="w", justify="left")
-        label.grid(row = 0, column = 0, sticky = "nsw", pady = 20, padx=(25, 20), ipadx = 18)
+        label.grid(row = 0, column = icon_exist, sticky = "nsw", pady = 20, padx=(25*(not icon_exist), 20), ipadx = 18)
 
         #^ Buttons
         buttons_frame = ctk.CTkFrame(frame, fg_color= "transparent")
@@ -59,7 +82,7 @@ class Dialog(ctk.CTkToplevel):
         Confirm_button = ctk.CTkButton(buttons_frame, text=button_text, command=lambda func = button_function: self._button_function(func), font=button_font,
                                        fg_color=button_color, hover_color=(hvr_clr_g(button_color[0], "l", 10), hvr_clr_g(button_color[1], "d", 10)))
         Confirm_button.pack(expand=True, side="right", padx=10)
-        buttons_frame.grid(row = 1, column = 0, sticky = "ne", pady = (2, 15), padx = 10)
+        buttons_frame.grid(row = 1, column = icon_exist, sticky = "ne", pady = (2, 15), padx = 10)
 
         frame.update()
         _frame_cutout = ctk.CTkFrame(self, fg_color=self.ugliest_color, width = frame.winfo_reqwidth()/self.scaleFactor, height = frame.winfo_reqheight()/self.scaleFactor, corner_radius=10)   # the border grows inwards, so we don't need to account for it
