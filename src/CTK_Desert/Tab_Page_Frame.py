@@ -229,11 +229,11 @@ class Frame(ctk.CTkFrame):
         if switch:
             self.page_switcher(name)
 
-    def reload_page(self, name):    #* Need to make sure that the class is deleted completely: 1. frame.destroy(), 2. ...
+    def reload_page(self, name, args):    #* Need to make sure that the class is deleted completely: 1. frame.destroy(), 2. ...
         if name in self.mainpages_dict:
             self.ext_pages_importer(self.mainpages_dict[name], reload=True)
 
-            self.mainpages_dict[name] = eval(name + "()")
+            self.mainpages_dict[name] = eval(name + "(*args)")
 
             if self.page_choise == name:
                 self.pages_dict[name].hide_page()
@@ -249,7 +249,7 @@ class Frame(ctk.CTkFrame):
             # subpage_dir = os.path.relpath(os.path.dirname(inspect.getfile(self.subpages_dict[name].__class__)))
             self.ext_pages_importer(self.subpages_dict[name], reload=True)
 
-            self.subpages_dict[name] = eval(class_name + "()")
+            self.subpages_dict[name] = eval(class_name + "(*args)")
 
             if self.page_choise == splited_name[0]:
                 self.pages_dict[splited_name[0]].hide_page()
@@ -267,20 +267,21 @@ class Frame(ctk.CTkFrame):
         # dir = inspect.getmodule(self.mainpages_dict[name]).__file__
         # os.remove(dir)
 
-    def Subpage_Construction(self, Main_page: str, Sub_page, keep: bool = True): 
+    def Subpage_Construction(self, Main_page: str, Sub_page, keep: bool = True, args: tuple = ()): 
         """Constructs the Subpage, so that it is ready to be opened at any moment
 
         Args:
             Main_page (str): used to get the name of the main page class "case sensitive"
             Sub_page (Class): used to initialize the subpage class with the necessary parameters
             keep (bool, optional): keep the subpage if it already exists. Defaults to True.
+            args (tuple, optional): arguments to be passed to the subpage class. Defaults to ().
         """
         
         domain = f"{Main_page}.{Sub_page.__name__}"
         if keep and domain in self.subpages_dict:
             pass
         else:
-            subpage_inited = Sub_page()
+            subpage_inited = Sub_page(*args)
             self.subpages_dict[domain] = subpage_inited
 
     def Subpage_init(self, Main_page_name: str, Sub_page_name: str): 

@@ -30,13 +30,14 @@ class Chest():
         """
         self.Manager.page_switcher(Target_Page)
 
-    def reload_page(self, name):
+    def reload_page(self, name, args):
         """Reloads the page to apply any saved changes made to the code of the page
 
         Args:
             name (str): Name of the page "case sensitive"
+            args (tuple): Arguments to be passed to the page
         """
-        self.Manager.reload_page(name)
+        self.Manager.reload_page(name, args)
 
     def Store_a_Page(self, Target_Page: str, Switch=True):
         """Constructs a new main page, so that it is ready to be opened at any moment
@@ -47,15 +48,16 @@ class Chest():
         """
         self.Manager.new_page_constructor(Target_Page, Switch)
 
-    def Store_SubPage(self, Main_page: str, Sub_page, keep : bool = True):
+    def Store_SubPage(self, Main_page: str, Sub_page, keep : bool = True, args: tuple = ()):
         """Constructs the Subpage, so that it is ready to be opened at any moment
 
         Args:
             Main_page (str): used to get the name of the main page class "case sensitive"
             Sub_page (Class): used to initialize the subpage class with the necessary parameters
             keep (bool, optional): keep the subpage if it already exists. Defaults to True.
+            args (tuple, optional): arguments to be passed to the subpage. Defaults to ().
         """
-        self.Manager.Subpage_Construction(Main_page, Sub_page, keep)
+        self.Manager.Subpage_Construction(Main_page, Sub_page, keep, args)
 
     def Use_SubPage(self, Main_page_name: str, Sub_page_name: str):
         """Opens the SubPage
