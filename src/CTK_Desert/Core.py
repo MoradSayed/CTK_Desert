@@ -36,7 +36,7 @@ class Chest():
         """
         self.Manager.page_switcher(Target_Page)
 
-    def reload_page(self, name, args):
+    def reload_page(self, name, args: tuple = ()):
         """Reloads the page to apply any saved changes made to the code of the page
 
         Args:
