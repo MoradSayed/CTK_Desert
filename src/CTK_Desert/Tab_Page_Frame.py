@@ -16,7 +16,7 @@ from .Workspace import Workspace
 
 class Frame(ctk.CTkFrame):
     
-    def __init__ (self, parent, usr_assets_dir, page_choise, on_theme_change_func=None):
+    def __init__ (self, parent, usr_assets_dir, page_choise):
         super().__init__(parent, fg_color=(LIGHT_MODE["background"], DARK_MODE["background"]))
         self.current_dir = os.path.dirname(__file__)
         self.original_icons_dir = f"{self.current_dir}\\images\\Icons\\"
@@ -29,7 +29,6 @@ class Frame(ctk.CTkFrame):
         self.menu_opened = False
 
         self.page_choise = page_choise if page_choise != "" else "Workspace"
-        self.on_theme_change_func = on_theme_change_func
         self.last_page = None
         self.tabs = [("Workspace", 0), ("Settings", 0), ] # used to add tabs after importing its class, the 1 or 0 is used to determine if the tab is created at the beginning automatically or do i want to create it manually later 
         

@@ -36,17 +36,20 @@ class Desert(ctk.CTk):
         except:
             pass
 
-        with open(os.path.join(os.path.dirname(__file__), 'preferences.json'), 'r') as f:
-            theme_data = json.load(f)
-        self.App_Theme = theme_data["theme"]
-        ctk.set_appearance_mode(f'{self.App_Theme}')
-        self.theme_mode = ctk.get_appearance_mode()
-        self.title_bar_color(TITLE_BAR_HEX_COLORS[f"{self.theme_mode.lower()}"]) #change the title bar color
-
         if not os.path.exists(assets_dir + "\Images"):
             os.mkdir(assets_dir + "\Images")
         if not os.path.exists(assets_dir + "\Pages"):
             os.mkdir(assets_dir + "\Pages")
+        if not os.path.isfile(assets_dir + "\preferences.json"):
+            with open(os.path.join(assets_dir, 'preferences.json'), 'w') as f:
+                json.dump({"theme": "system"}, f, indent=4) #! needs to be edited after moving the themes to a separate file
+
+        Chest.userAssetsDirectory = assets_dir
+        self.App_Theme = Chest.Get_Prefered_Theme()
+        ctk.set_appearance_mode(f'{self.App_Theme}')
+        if self.App_Theme == "system":
+            self.App_Theme = ctk.get_appearance_mode()
+        self.title_bar_color(TITLE_BAR_HEX_COLORS[f"{self.App_Theme.lower()}"]) #change the title bar color
         
         self.Home = Frame(self, usr_assets_dir=assets_dir, page_choise=page_choise)
         
