@@ -172,3 +172,7 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.Scrollable_fra
     def hide_page(self):
         self.pack_forget()
         self.menu_frame.place_forget()    #placed inside the file 
+
+    def destroy_page(self):
+        self.destroy()
+        self.menu_frame.destroy()    #placed inside the file

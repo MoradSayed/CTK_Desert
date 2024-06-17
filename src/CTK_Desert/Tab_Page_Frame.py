@@ -2,7 +2,7 @@ import os, importlib, copy
 import importlib.util
 import customtkinter as ctk
 from PIL import Image
-import inspect
+import inspect, send2trash
 
 import win32api
 
@@ -183,14 +183,14 @@ class Frame(ctk.CTkFrame):
         if switch:
             self.page_switcher(name)
 
-    def reload_page(self, name, args):    #* Need to make sure that the class is deleted completely: 1. frame.destroy(), 2. ...
+    def reload_page(self, name, args):
         if name in self.mainpages_dict:
             self.ext_pages_importer(self.mainpages_dict[name], reload=True)
 
             self.mainpages_dict[name] = eval(name + "(*args)")
 
             if self.page_choise == name:
-                self.pages_dict[name].hide_page()
+                self.pages_dict[name].destroy_page()
                 self.pages_dict[name] = self.mainpages_dict[name]
                 self.pages_dict[name].show_page()
             else:
@@ -206,20 +206,51 @@ class Frame(ctk.CTkFrame):
             self.subpages_dict[name] = eval(class_name + "(*args)")
 
             if self.page_choise == splited_name[0]:
-                self.pages_dict[splited_name[0]].hide_page()
+                self.pages_dict[splited_name[0]].destroy_page()
                 self.pages_dict[splited_name[0]] = self.subpages_dict[name]
                 self.pages_dict[splited_name[0]].show_page()
             else:
                 self.pages_dict[splited_name[0]] = self.subpages_dict[name]
                 self.page_switcher(splited_name[0])
 
-    def delete_page(self, name):    #! Need to implement a remove page mechanism in the Frame Class
-        # remove it from the current session (main pages, buttons, subpages if checked) don't forget to use .destroy() on the page
-        print(f"Deleting {name}")
+    def delete_page(self, name, delete_subpages: bool = False, shift_del: bool = False):    #! Not completed
+        
+        if name == self.page_choise:
+            Chest.Dialog_Manager.new("DsrtSys:Err-Del", "You can't delete a page that's in use", "danger", button_text="")
+            Chest.Dialog_Manager.show("DsrtSys:Err-Del")
+            return False
+        dir = inspect.getmodule(self.mainpages_dict[name]).__file__
 
+        self.mainpages_dict[name].destroy_page()
+        self.buttons[name].configure(image="")
+        self.buttons[name].destroy()
+        self.buttons.pop(name)
+        self.pages_dict.pop(name)
+        self.mainpages_dict.pop(name)
+        if delete_subpages:
+            deletion_names = []
+            for key in self.subpages_dict:
+                if key.split(".")[0] == name:
+                    deletion_names.append(key)
+            for key in deletion_names:
+                self.subpages_dict[key].destroy_page()
+                self.subpages_dict.pop(key)
+        
         # remove it from the files system   (code file, image files, also subpages if the option is checked)
-        # dir = inspect.getmodule(self.mainpages_dict[name]).__file__
-        # os.remove(dir)
+        #! still needs to delete subPages from system if the option is checked
+        if shift_del:
+            os.remove(dir)
+        else:
+            send2trash.send2trash(dir)
+        for n, i in enumerate(ICONS):
+            if shift_del:
+                os.remove(os.path.join(self.user_icons_dir, f"{name.lower()}{i}.png"))
+            else:
+                send2trash.send2trash(os.path.join(self.user_icons_dir, f"{name.lower()}{i}.png"))
+            if n == 3:
+                break
+
+        return True
 
     def Subpage_Construction(self, Main_page: str, Sub_page, keep: bool = True, args: tuple = ()): 
         """Constructs the Subpage, so that it is ready to be opened at any moment
