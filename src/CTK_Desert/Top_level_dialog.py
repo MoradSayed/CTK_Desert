@@ -91,8 +91,8 @@ class Dialog(ctk.CTkToplevel):
             self.dialogs[tag] = (frame, _frame_cutout)
 
     def _button_function(self, func: Callable):
-        func()
         self._hide()
+        func()
 
     def show(self, dialog):
         # self.parent.wm_attributes("-disabled", 1)
