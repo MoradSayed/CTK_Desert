@@ -29,7 +29,9 @@ class Desert(ctk.CTk):
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
         scaleFactor = windll.shcore.GetScaleFactorForDevice(0) / 100
-        self.geometry(f'1200x800+{int((screen_width*scaleFactor/2)-(1200*scaleFactor/2))}+{int((screen_height*scaleFactor/2)-(800*scaleFactor/2))}') #1.5 for the window scale (150%)
+        window_width = int(960*scaleFactor)
+        window_height = int(640*scaleFactor)
+        self.geometry(f'{window_width}x{window_height}+{int((screen_width*scaleFactor/2)-(window_width*scaleFactor/2))}+{int((screen_height*scaleFactor/2)-(window_height*scaleFactor/2))}') #1.5 for the window scale (150%)
         self.minsize(screen_width/2, screen_height/2)
         try:
             self.iconbitmap(os.path.join(os.path.dirname(__file__), "images/empty.ico"))
