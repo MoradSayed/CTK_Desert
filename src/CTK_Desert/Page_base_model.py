@@ -138,7 +138,7 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.Scrollable_fra
         self.last_Known_size = (self.parent.winfo_width(), self.parent.winfo_height())
 
         state = self.leave_func(event)
-        if state:
+        if state and self.scrollable:
             self.Scrollable_canvas.unbind_all("<MouseWheel>")
         return state 
            
