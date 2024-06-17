@@ -79,9 +79,10 @@ class Dialog(ctk.CTkToplevel):
         cancel_button = ctk.CTkButton(buttons_frame, text="Cancel", command=self._hide, font=button_font,
                                       fg_color=(LIGHT_MODE["primary"], DARK_MODE["primary"]), hover_color=(hvr_clr_g(LIGHT_MODE["primary"], "l"), hvr_clr_g(DARK_MODE["primary"], "d")))
         cancel_button.pack(expand=True, side="left", padx=10)
-        Confirm_button = ctk.CTkButton(buttons_frame, text=button_text, command=lambda func = button_function: self._button_function(func), font=button_font,
-                                       fg_color=button_color, hover_color=(hvr_clr_g(button_color[0], "l", 10), hvr_clr_g(button_color[1], "d", 10)))
-        Confirm_button.pack(expand=True, side="right", padx=10)
+        if button_text != "":
+            Confirm_button = ctk.CTkButton(buttons_frame, text=button_text, command=lambda func = button_function: self._button_function(func), font=button_font,
+                                        fg_color=button_color, hover_color=(hvr_clr_g(button_color[0], "l", 10), hvr_clr_g(button_color[1], "d", 10)))
+            Confirm_button.pack(expand=True, side="right", padx=10)
         buttons_frame.grid(row = 1, column = icon_exist, sticky = "ne", pady = (2, 15), padx = 10)
 
         frame.update()
