@@ -30,7 +30,7 @@ class Frame(ctk.CTkFrame):
 
         self.page_choise = page_choise if page_choise != "" else "Workspace"
         self.last_page = None
-        self.tabs = [("Workspace", 0), ("Settings", 0), ] # used to add tabs after importing its class, the 1 or 0 is used to determine if the tab is created at the beginning automatically or do i want to create it manually later 
+        self.tabs = [("Workspace", 0), ("Settings", 3), ] # used to add tabs after importing its class, the 1 or 0 is used to determine if the tab is created at the beginning automatically or do i want to create it manually later 
         
         self.U_Pages_dir = os.path.join(usr_assets_dir, "Pages")
         files = os.listdir(self.U_Pages_dir)                   # get all the files in the directory
@@ -66,40 +66,26 @@ class Frame(ctk.CTkFrame):
 
 
     def menu(self):
-        self.menu_frame = ctk.CTkFrame(self, fg_color=(hvr_clr_g(LIGHT_MODE["background"], "l"), hvr_clr_g(DARK_MODE["background"], "d")))
+        self.menu_frame = ctk.CTkFrame(self, fg_color=(hvr_clr_g(LIGHT_MODE["background"], "l"), hvr_clr_g(DARK_MODE["background"], "d")), width=70)
+        self.menu_frame.pack(side="left", fill="y", pady=(0, 27), padx=(0, 20))
+        self.menu_frame.pack_propagate(0)
 
-        # 1
         self.logo_frame = ctk.CTkFrame(self.menu_frame, fg_color="transparent")
-        button = self.tab("Workspace", self.logo_frame, (45,45))
-        self.buttons["Workspace"] = button
         self.logo_frame.pack(fill="x", ipady=5, padx=5)
-
-        # 2
         self.tabs_frame = ctk.CTkFrame(self.menu_frame, fg_color="transparent")
-        for tab in self.tabs:
-            if tab[1] == 1:
-                button = self.tab(tab[0], self.tabs_frame)      #create all the tabs
-                self.buttons[tab[0]] = button #saving them for later configuration in the color
-            else:
-                continue
         self.tabs_frame.pack(fill="x", padx=5, pady = 5)    
-
-        self.line = ctk.CTkFrame(self.menu_frame, fg_color=("#b3b3b3","#4c4c4c"), width=2, height=2)
-        self.line.pack(fill="x", padx=10)
-        #3
         self.apps_frame = ctk.CTkFrame(self.menu_frame, fg_color="transparent")
-
         self.apps_frame.pack(fill="both", expand=True, padx=5, pady = 5)
-
-        self.line = ctk.CTkFrame(self.menu_frame, fg_color=("#b3b3b3","#4c4c4c"), width=2, height=2)
-        self.line.pack(fill="x", padx=10)
-        #4
         self.user_frame = ctk.CTkFrame(self.menu_frame, fg_color="transparent")
-        button = self.tab("Settings", self.user_frame)
-        self.buttons["Settings"] = button
         self.user_frame.pack(fill="x", padx=5)
+        self.menu_frames_dict = {"0": self.logo_frame, "1": self.tabs_frame, "2": self.apps_frame, "3": self.user_frame}
 
-        self.menu_frame.place(relx=self.menu_relx, rely=0, anchor="nw", relheight = 1-(25/self.window_height), relwidth = self.menu_relwidth)
+        for tab in self.tabs:
+            button = self.tab(tab[0], self.menu_frames_dict[str(tab[1])], (45,45) if tab[0] == "Workspace" else (30,30))    #create all the tabs
+            self.buttons[tab[0]] = button #saving them for later configuration in the color
+
+        ctk.CTkFrame(self.menu_frame, fg_color=("#b3b3b3","#4c4c4c"), height=2).pack(fill="x", padx=10, after=self.tabs_frame)
+        ctk.CTkFrame(self.menu_frame, fg_color=("#b3b3b3","#4c4c4c"), height=2).pack(fill="x", padx=10, after=self.apps_frame)
 
     def page(self):
         self.page_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -107,41 +93,19 @@ class Frame(ctk.CTkFrame):
         for name in self.tabs:
             self.mainpages_dict[name[0]] = eval(name[0] + "()")    #calls all the contents of the tabs (but not displaying them) and passing the arguments, while saving them in a dict for later use
         
-        self.page_frame.place(relx= (self.menu_relx + self.menu_relwidth + (self.padding/2)) , 
-                              rely=0, 
-                              anchor="nw", 
-                              relheight = 1-(25/self.window_height), 
-                              relwidth = 1 - (self.menu_relx + self.menu_relwidth + (self.padding/2)) - (self.padding/2)
-                              )
+        self.page_frame.pack(side="left", fill="both", expand=True, pady=(0, 27), padx=(0, 20))
         
         self.pages_dict = copy.copy(self.mainpages_dict)
         Chest.Displayed_Pages = self.pages_dict
            
     def menu_button_command(self): # currently not used
         if self.menu_opened:
-            self.menu_relwidth -= 0.135
-            self.menu_frame.place(relx=self.menu_relx, rely=0, anchor="nw", relheight = 1-(40/self.window.winfo_width()), relwidth = self.menu_relwidth)
-
-            self.page_frame.place(relx= (self.menu_relx + self.menu_relwidth + (self.padding/2)) , 
-                                rely=0, 
-                                anchor="nw", 
-                                relheight = 1-(40/self.window.winfo_width()), 
-                                relwidth = 1 - (self.menu_relx + self.menu_relwidth + (self.padding/2)) - (self.padding/2)
-                                )
-
+            self.menu_frame.configure(width=70)
             self.update()
             self.menu_opened = False
 
         else:
-            self.menu_relwidth += 0.135
-            self.menu_frame.place(relx=self.menu_relx, rely=0, anchor="nw", relheight = 1-(40/self.window.winfo_width()), relwidth = self.menu_relwidth)
-
-            self.page_frame.place(relx= (self.menu_relx + self.menu_relwidth + (self.padding/2)) , 
-                                    rely=0, 
-                                    anchor="nw", 
-                                    relheight = 1-(40/self.window.winfo_width()), 
-                                    relwidth = 1 - (self.menu_relx + self.menu_relwidth + (self.padding/2)) - (self.padding/2)
-                                    )
+            self.menu_frame.configure(width=200)
             self.update()
             self.menu_opened = True
 
@@ -187,16 +151,7 @@ class Frame(ctk.CTkFrame):
     def update_sizes(self): 
         self.window_width = self.size_event.width
         self.window_height = self.size_event.height
-        self.menu_relwidth = 75/self.window_width
-        
-        self.menu_frame.place(relx=self.menu_relx, rely=0, anchor="nw", relheight = 1-(25/self.window_height), relwidth = self.menu_relwidth)
-        
-        self.page_frame.place(relx= (self.menu_relx + self.menu_relwidth + (self.padding/2)) , 
-                    rely=0, 
-                    anchor="nw", 
-                    relheight = 1-(25/self.window_height), 
-                    relwidth = 1 - (self.menu_relx + self.menu_relwidth + (self.padding/2)) - (self.padding/2)
-                    )
+        # self.menu_relwidth = 75/self.window_width
         
         self.pages_dict[self.page_choise].Page_update_manager()
 
