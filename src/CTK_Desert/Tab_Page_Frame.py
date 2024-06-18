@@ -55,6 +55,9 @@ class Frame(ctk.CTkFrame):
 
         self.dialog_widget = Dialog(self.window)
 
+        self.scroll_bar_frame = ctk.CTkFrame(self, fg_color="transparent", width=20)
+        self.scroll_bar_frame.pack(side="right", fill="y", pady=(0, 27))
+        self.scroll_bar_frame.pack_propagate(0)
         self.menu()
         self.page()
 
@@ -93,7 +96,7 @@ class Frame(ctk.CTkFrame):
         for name in self.tabs:
             self.mainpages_dict[name[0]] = eval(name[0] + "()")    #calls all the contents of the tabs (but not displaying them) and passing the arguments, while saving them in a dict for later use
         
-        self.page_frame.pack(side="left", fill="both", expand=True, pady=(0, 27), padx=(0, 20))
+        self.page_frame.pack(side="left", fill="both", expand=True, pady=(0, 27))
         
         self.pages_dict = copy.copy(self.mainpages_dict)
         Chest.Displayed_Pages = self.pages_dict

@@ -50,6 +50,10 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.Scrollable_fra
                 width = self.winfo_width(), 
                 height = 10000, 
                 tags= "frame")
+
+            self.scroll_bar = ctk.CTkScrollbar(Chest.Manager.scroll_bar_frame, orientation="vertical", 
+                                               command=self.Scrollable_canvas.yview, button_color=color, button_hover_color=(hvr_clr_g(color[0], "l"), hvr_clr_g(color[1], "d")))
+            self.Scrollable_canvas.config(yscrollcommand=self.scroll_bar.set)
         else:
             self.Scrollable_frame = ctk.CTkFrame(self, fg_color=color, bg_color=(LIGHT_MODE["background"], DARK_MODE["background"]))
             self.Scrollable_frame.pack(fill="both", expand=True)
@@ -82,8 +86,10 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.Scrollable_fra
                 if self.max_height > self.winfo_height():
                     # using bind_all to make the scrolling function work even on the children of the canvas
                     self.Scrollable_canvas.bind_all("<MouseWheel>", lambda event: self.scrolling_action(event)) 
+                    self.scroll_bar.pack(fill="y", expand=True)
                 else:
                     self.Scrollable_canvas.unbind_all("<MouseWheel>")
+                    self.scroll_bar.pack_forget()
             
     def scrolling_action(self, event):
         if str(event.widget).startswith(self.widget_str):
@@ -113,8 +119,10 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.Scrollable_fra
             else:
                 if self.max_height > self.winfo_height():
                     self.Scrollable_canvas.bind_all("<MouseWheel>", lambda event: self.scrolling_action(event)) 
+                    self.scroll_bar.pack(fill="y", expand=True)
                 else:
                     self.Scrollable_canvas.unbind_all("<MouseWheel>")
+                    self.scroll_bar.pack_forget()
                 
             self.last_Known_size = (self.parent.winfo_width(), self.parent.winfo_height())
 
@@ -138,8 +146,6 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.Scrollable_fra
         self.last_Known_size = (self.parent.winfo_width(), self.parent.winfo_height())
 
         state = self.leave_func(event)
-        if state and self.scrollable:
-            self.Scrollable_canvas.unbind_all("<MouseWheel>")
         return state 
            
     def tool_menu(self):
@@ -172,6 +178,9 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.Scrollable_fra
     def hide_page(self):
         self.pack_forget()
         self.menu_frame.place_forget()    #placed inside the file 
+        if self.scrollable:
+            self.Scrollable_canvas.unbind_all("<MouseWheel>")
+            self.scroll_bar.pack_forget()
 
     def destroy_page(self):
         self.destroy()
