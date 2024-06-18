@@ -213,7 +213,7 @@ class Frame(ctk.CTkFrame):
                 self.pages_dict[splited_name[0]] = self.subpages_dict[name]
                 self.page_switcher(splited_name[0])
 
-    def delete_page(self, name, delete_subpages: bool = False, shift_del: bool = False):    #! Not completed
+    def delete_page(self, name, delete_subpages: bool = False, shift_del: bool = False):
         
         if name == self.page_choise:
             Chest.Dialog_Manager.new("DsrtSys:Err-Del", "You can't delete a page that's in use", "danger", button_text="")
@@ -221,23 +221,29 @@ class Frame(ctk.CTkFrame):
             return False
         dir = inspect.getmodule(self.mainpages_dict[name]).__file__
 
+        # Deleting Mainpage from the current session
         self.mainpages_dict[name].destroy_page()
         self.buttons[name].configure(image="")
         self.buttons[name].destroy()
         self.buttons.pop(name)
         self.pages_dict.pop(name)
         self.mainpages_dict.pop(name)
+        # Deleting Subpages (if the option is checked) from the current session and from the system
         if delete_subpages:
             deletion_names = []
             for key in self.subpages_dict:
                 if key.split(".")[0] == name:
                     deletion_names.append(key)
             for key in deletion_names:
+                sub_page_dir = inspect.getfile(self.subpages_dict[key].__class__)
                 self.subpages_dict[key].destroy_page()
                 self.subpages_dict.pop(key)
+                if shift_del:
+                    os.remove(sub_page_dir)
+                else:
+                    send2trash.send2trash(sub_page_dir)
         
-        # remove it from the files system   (code file, image files, also subpages if the option is checked)
-        #! still needs to delete subPages from system if the option is checked
+        # Deleting Mainpage (code file, image files) from the system
         if shift_del:
             os.remove(dir)
         else:
