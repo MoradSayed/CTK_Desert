@@ -54,6 +54,18 @@ class Chest():
         """
         self.Manager.new_page_constructor(Target_Page, Switch)
 
+    def Remove_a_Page(self, Target_Page: str, delete_subpages: bool = False, shift_del: bool = False):
+        """Deletes a Mainpage, and all its subpages if specified.
+        IT DELETES THE PAGE PERMANENTLY, SO BE CAREFUL
+
+        Args:
+            Target_Page (str): Name of the mainpage tp delete "case sensitive"
+            delete_subpages (bool, optional): Delete the subpages of the mainpage. Defaults to False.
+            shift_del (bool, optional): When False it moves the page to the Recycle Bin, when True it deletes it PERMANENTLY. Defaults to False.
+        """
+
+        return self.Manager.delete_page(Target_Page, delete_subpages, shift_del)
+
     def Store_SubPage(self, Main_page: str, Sub_page, keep : bool = True, args: tuple = ()):
         """Constructs the Subpage, so that it is ready to be opened at any moment
 
