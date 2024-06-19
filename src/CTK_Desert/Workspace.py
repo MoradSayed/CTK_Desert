@@ -59,7 +59,11 @@ class Workspace(Page_BM):
         if f"{page_name}+deletion" not in Chest.Dialog_Manager.dialogs:
             # print("creating a new dialog frame")
             Chest.Dialog_Manager.new(tag=f"{page_name}+deletion", icon="danger", text=f"Are you sure you want to delete {page_name}?", button_text="Delete", 
-                                     button_function=lambda: Chest.Manager.delete_page(page_name))
+                                     button_function=lambda event: dialog_func(event), checkbox_text="Delete Assosiated Subpages")
         Chest.Dialog_Manager.show(f"{page_name}+deletion")
 
-
+        def dialog_func(CB_state):
+            state = Chest.Remove_a_Page(page_name, CB_state)
+            if state:
+                #! Delete the tab (Needs to be implemented)
+                pass

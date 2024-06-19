@@ -45,7 +45,8 @@ class Dialog(ctk.CTkToplevel):
 
     def new(self, tag: str, 
             text: str = "Are you sure?", icon: str = None, font: tuple = (FONT_B, 20), 
-            button_text: str = "Confirm", button_font = (FONT, 18), button_color: str | tuple = (LIGHT_MODE["accent"], DARK_MODE["accent"]), button_function: Callable = lambda: None):
+            button_text: str = "Confirm", button_font = (FONT, 18), button_color: str | tuple = (LIGHT_MODE["accent"], DARK_MODE["accent"]), button_function: Callable = lambda: None, 
+            checkbox_text: str = None, checkbox_font: tuple = (FONT, 18), cb_hover_color: str | tuple = (hvr_clr_g(LIGHT_MODE["accent"], "l"), hvr_clr_g(DARK_MODE["accent"], "d"))):
 
         frame = ctk.CTkFrame(self.parent, fg_color=self.dialog_color, corner_radius=10, border_width=2)    # the border grows inwards, so we don't need to account for it later on
         
@@ -74,25 +75,42 @@ class Dialog(ctk.CTkToplevel):
         label = ctk.CTkLabel(frame, text=text, font=font, wraplength=450, anchor="w", justify="left")
         label.grid(row = 0, column = icon_exist, sticky = "nsw", pady = 20, padx=(25*(not icon_exist), 20), ipadx = 18)
 
+        #^ Checkbox
+        if checkbox_text != None:
+            checkbox_exist = 1
+            cb_var = ctk.BooleanVar(value=False)
+            cb_hover_color = (hvr_clr_g(button_color[0], "l"), hvr_clr_g(button_color[1], "d"))
+            checkbox = ctk.CTkCheckBox(frame, text=checkbox_text, font=checkbox_font, 
+                                       checkmark_color=self.dialog_color, hover_color=cb_hover_color, border_color=cb_hover_color, fg_color=button_color, 
+                                       variable=cb_var)
+            checkbox.grid(row = 1, column = 0, columnspan=1+icon_exist, sticky = "w", pady = (0, 15), padx=(25, 0))
+        else:
+            cb_var = None
+            checkbox_exist = 0
+
         #^ Buttons
         buttons_frame = ctk.CTkFrame(frame, fg_color= "transparent")
         cancel_button = ctk.CTkButton(buttons_frame, text="Cancel", command=self._hide, font=button_font,
                                       fg_color=(LIGHT_MODE["primary"], DARK_MODE["primary"]), hover_color=(hvr_clr_g(LIGHT_MODE["primary"], "l"), hvr_clr_g(DARK_MODE["primary"], "d")))
         cancel_button.pack(expand=True, side="left", padx=10)
         if button_text != "":
-            Confirm_button = ctk.CTkButton(buttons_frame, text=button_text, command=lambda func = button_function: self._button_function(func), font=button_font,
+            Confirm_button = ctk.CTkButton(buttons_frame, text=button_text, command=lambda func = button_function, state = cb_var: self._button_function(func, state), font=button_font,
                                         fg_color=button_color, hover_color=(hvr_clr_g(button_color[0], "l", 10), hvr_clr_g(button_color[1], "d", 10)))
             Confirm_button.pack(expand=True, side="right", padx=10)
-        buttons_frame.grid(row = 1, column = icon_exist, sticky = "ne", pady = (2, 15), padx = 10)
+        buttons_frame.grid(row = 1+checkbox_exist, column = icon_exist, sticky = "ne", pady = (2, 15), padx = 10)
 
         frame.update()
         _frame_cutout = ctk.CTkFrame(self, fg_color=self.ugliest_color, width = frame.winfo_reqwidth()/self.scaleFactor, height = frame.winfo_reqheight()/self.scaleFactor, corner_radius=10)   # the border grows inwards, so we don't need to account for it
         if tag != None:
             self.dialogs[tag] = (frame, _frame_cutout)
 
-    def _button_function(self, func: Callable):
+    def _button_function(self, func: Callable, cb_state: ctk.BooleanVar | None):
         self._hide()
-        func()
+        try:
+            func(cb_state.get()) if cb_state != None else func()
+        except TypeError as e:
+            print(f"TypeError: {e}")
+            print("The state of the checkbox is not being passed to the function. Make sure the function has a parameter to accept the state of the checkbox.")
 
     def show(self, dialog):
         # self.parent.wm_attributes("-disabled", 1)
