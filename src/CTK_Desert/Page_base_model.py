@@ -37,8 +37,9 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.Scrollable_fra
         self.leave_func = leave_func
 
         if self.scrollable:
+            self.scrolled = 0
             self.Scrollable_canvas = tk.Canvas(self, background=color[0] if ctk.get_appearance_mode() == "Light" else color[1], 
-                                               scrollregion = (0, 0, self.winfo_width(), 10000), 
+                                               scrollregion = (0, 0, self.winfo_width(), 10000), yscrollincrement=4, 
                                                bd=0, highlightthickness=0, relief = 'ridge')
             self.Scrollable_canvas.pack(fill="both", expand=True)
             
@@ -93,7 +94,14 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.Scrollable_fra
             
     def scrolling_action(self, event):
         if str(event.widget).startswith(self.widget_str):
-            self.Scrollable_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+            if self.scrolled == 62:
+                self.scrolled = 0
+                return 1
+            else:
+                self.scrolled += 1
+                self.Scrollable_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+                self.update()
+                self.after(1, self.scrolling_action, event)
     
     def Starting(self): # this function is called only once when the page is opened for the first time
         self.menu_frame.place(relx=0.5, rely=0.5, anchor="center")
