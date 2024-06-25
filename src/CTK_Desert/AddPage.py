@@ -2,7 +2,7 @@ import customtkinter as ctk
 from .Core import userChest as Chest
 from .Page_base_model import Page_BM
 from .Theme import *
-from .utils import hvr_clr_g
+from .utils import hvr_clr_g, color_finder
 from .Widgits import C_Widgits
 from .Theme import *
 import os
@@ -17,7 +17,7 @@ class AddPage(Page_BM):
         self.menu_page_frame = Chest.Manager
         self.frame = self.Scrollable_frame # Parent of all children in this page
         self.mode = ctk.get_appearance_mode()
-        self.frame_clr = self.get_scrframe_color()
+        self.frame_clr = color_finder(self.frame)
         self.pages_path = Chest.userPagesDirectory
         self.icon_names = ["_d_s", "_d", "_l_s", "_l"]
         self.icon_path = None

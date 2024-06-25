@@ -5,6 +5,7 @@ from .Core import userChest as Chest
 from .Page_base_model import Page_BM
 from .Theme import *
 from .Widgits import C_Widgits, large_tabs
+from .utils import color_finder
 
 from .AddPage import AddPage
 
@@ -15,7 +16,7 @@ class Workspace(Page_BM):
         self.menu_page_frame = Chest.Manager
         self.frame = self.Scrollable_frame # Parent of all children in this page
         self.mode = ctk.get_appearance_mode()
-        self.frame_clr = self.get_scrframe_color()
+        self.frame_clr = color_finder(self.frame)
         self.add_menu_button(r"C:\Users\Morad\Downloads\icons8-reload-64.png", lambda: Chest.reload_page("Workspace"))
 
         self.icons_path = Chest.Manager.original_icons_dir
@@ -26,8 +27,9 @@ class Workspace(Page_BM):
         self.workspace_label.pack(fill="x", padx=20, pady=20)
 
         # Section 1
-        self.sectionframe, self.sectionbutton = self.cwdgs.section("Pages", button_text="", button_command=lambda: Chest.Use_SubPage("Workspace", "AddPage"), button_icon=r"C:\Users\Morad\Downloads\icons8-add-96.png", icon_height=30)
-        self.sectionbutton.configure(fg_color=self.frame_clr, hover_color=self.frame_clr, width=30, height=30) 
+        self.sectionframe = self.cwdgs.section("Pages")
+        self.cwdgs.section_button(section=self.sectionframe, fg_color="transparent", button_icon=r"C:\Users\Morad\Downloads\icons8-add-96.png", icon_height=30, 
+                                  button_command=lambda: Chest.Use_SubPage("Workspace", "AddPage"))
         # Section Unit (options)
         self.pages_tabs = large_tabs(self, self.sectionframe, autofit=True)
 

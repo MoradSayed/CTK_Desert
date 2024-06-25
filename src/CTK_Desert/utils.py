@@ -95,3 +95,12 @@ def change_pixel_color(icon_path, color, return_img=False):
     if return_img:
         return finished_images if len(finished_images) > 1 else finished_images[0]
     
+########################################################################################
+
+def color_finder(widget):
+    while True:
+        if widget._fg_color == "transparent":
+            widget = widget.master
+        else:
+            return widget._fg_color
+        

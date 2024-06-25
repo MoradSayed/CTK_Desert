@@ -25,7 +25,7 @@ class Settings(Page_BM):
         self.settings_label.pack(fill="x", padx=20, pady=20)
 
         # Section 1
-        self.appearance_sec = self.c_wdgts.section(Title="Appearance")
+        self.appearance_sec = self.c_wdgts.section("Appearance")
         # Section Units (options)
             # Combobox 
         self.theme_op   = self.c_wdgts.section_unit(section=self.appearance_sec, title="Theme", widget="combobox", values=["System", "Light", "Dark"], command=Chest.Set_Prefered_Theme, default=Chest.Get_Prefered_Theme().capitalize()) # default=self.window.App_Theme.capitalize()   This was the old one
@@ -34,7 +34,7 @@ class Settings(Page_BM):
         #   # Checkbox
         # self.allow_op   = self.c_wdgts.section_unit(section=self.appearance_sec, title="Allow Themes to Change", widget="checkbox", command= lambda: print("NO func implemented _Chk"))
 
-        self.Advanced_Settings = self.c_wdgts.section(Title="Advanced Settings")
+        self.Advanced_Settings = self.c_wdgts.section("Advanced Settings")
         # Section Units (options)
         self.WS_Var = ctk.BooleanVar(value=self.menu_page_frame.mainpages_dict["Workspace"].openable)
         self.Dev_mode   = self.c_wdgts.section_unit(section=self.Advanced_Settings, title="Enable Dev mode", widget="checkbox", command= lambda : self.WS_openable_func(), default=self.WS_Var)

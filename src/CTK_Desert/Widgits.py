@@ -2,9 +2,9 @@ import customtkinter as ctk
 from PIL import Image, ImageTk
 import numpy as np
 from .Theme import *
-from .utils import hvr_clr_g, change_pixel_color
+from .utils import hvr_clr_g, change_pixel_color, color_finder
 import textwrap
-from typing import Callable
+from typing import Union, Tuple, Callable
 
 class C_Widgits():
     def __init__(self, page_class, parent):
@@ -12,39 +12,61 @@ class C_Widgits():
         self.parent = parent
         self.c = 1 # multiplier for y padding
         
-    def section(self, Title=None, padx=0, pady=10, button_text=None, button_command=None, button_icon=None, icon_height=50):
+    def section(self, 
+                title:      str = None, 
+                font:       Union[tuple, ctk.CTkFont] = (FONT_B, 25), 
+                text_color: Union[str, Tuple[str, str]] = (LIGHT_MODE["text"], DARK_MODE["text"]),
+                padx: Union[int, Tuple[int, int]] = 0, 
+                pady: Union[int, Tuple[int, int]] = 10):
+        
         section_frame = ctk.CTkFrame(self.parent, fg_color= "transparent")
 
-        if Title != "" and Title != None:
-            title_frame = ctk.CTkFrame(section_frame, fg_color= "transparent")
-            section_label = ctk.CTkLabel(title_frame, text=f"{Title}", font=(FONT_B, 25), fg_color="transparent", text_color=(LIGHT_MODE["text"], DARK_MODE["text"]), anchor="w")
+        if title != None:
+            title_frame = ctk.CTkFrame(section_frame, fg_color= "transparent")  # contains the label and the button (if it exists).
+            section_label = ctk.CTkLabel(title_frame, text=f"{title}", font=font, fg_color="transparent", text_color=text_color, anchor="w")
             section_label.pack(side="left", fill="x", padx=20)
             title_frame.pack(fill="x")
-
-        if button_text != None:
-            if button_icon != None:
-                button_icon = Image.open(button_icon)
-                w, h = button_icon.size[0],button_icon.size[1]
-                r = w/h
-                s = (int(icon_height*r), int(icon_height))
-                button_icon = ctk.CTkImage(button_icon, size=s)
-            section_button = ctk.CTkButton(title_frame, text=f"{button_text}", font=(FONT, 15), command=button_command, fg_color=(LIGHT_MODE["accent"], DARK_MODE["accent"]), hover_color=(hvr_clr_g(LIGHT_MODE["accent"], "l", 20), hvr_clr_g(DARK_MODE["accent"], "d", 20)), image=button_icon)
-            section_button.pack(side="right", fill="x", padx=20)
-        
 
         ops_frame = ctk.CTkFrame(section_frame, fg_color= "transparent")
         ops_frame.pack(fill="x", padx=20, pady=10)
 
         section_frame.pack(fill="x", padx=padx, pady=pady)
 
-        if button_text==None:
-            return ops_frame  
-        else:
-            return ops_frame, section_button
+        return ops_frame  
+        
+    def section_button(self, 
+                       section:         ctk.CTkFrame, 
+                       button_icon:     Union[str, Image.Image] = None, 
+                       button_command:  Callable = None, 
+                       icon_height:     int = 30, 
+                       button_text:     str = "", 
+                       font:            Union[Tuple[str, int], ctk.CTkFont] = (FONT, 15), 
+                       fg_color:        Union[str, Tuple[str, str]] = (LIGHT_MODE["accent"], DARK_MODE["accent"]), 
+                       hover_color:     Union[str, Tuple[str, str]] = (hvr_clr_g(LIGHT_MODE["accent"], "l", 20), hvr_clr_g(DARK_MODE["accent"], "d", 20)) ):
+
+            if button_icon != None:
+                if isinstance(button_icon, str):
+                    button_icon = Image.open(button_icon)
+                elif isinstance(button_icon, Image.Image):
+                    pass
+                else:
+                    raise TypeError("button_icon should be a path to an image or an Image object.")
+                w, h = button_icon.size[0],button_icon.size[1]
+                r = w/h
+                s = (int(icon_height*r), int(icon_height))
+                button_icon = ctk.CTkImage(button_icon, size=s)
+
+            section_button = ctk.CTkButton(section.master.winfo_children()[0], text=f"{button_text}", font=font, 
+                                           fg_color=fg_color, hover_color=color_finder(section.master) if fg_color == "transparent" else hover_color, 
+                                           image=button_icon, width=s[0], height=s[1], 
+                                           command=button_command)
+            section_button.pack(side="right", fill="x", padx=20)
+
+            return section_button
     
 ###############################################################################################################################################################################################
 
-    def section_unit(self, section, title : str = "", widget : str =None, command: callable =None, values : list =None, default : str =None):
+    def section_unit(self, section, title : str = "", widget : str =None, command: Callable =None, values : list =None, default : str =None):
         """
         Adds a unit to a section with specified parameters.
 
@@ -53,7 +75,7 @@ class C_Widgits():
         - title (str, optional): The title of the unit.
         - widget (str, optional): The type of widget to be used in the unit. 
             - Supported values: "combobox", "button", "checkbox", "entry", "switch".
-        - command (callable, optional): The command to be executed when the widget is interacted with.
+        - command (Callable, optional): The command to be executed when the widget is interacted with.
         - values (list, optional): A list of values to populate a combobox widget.
         - default: The default value for the widget.
             - treated as the text for a button widget.
@@ -391,7 +413,7 @@ class large_tabs(ctk.CTkFrame):
     def page_function_calls(self):
         self.page.updating_call_list.append(self.ltabs_update)
 
-class Banner(ctk.CTkFrame):
+class Banner(ctk.CTkFrame): #! change the image resizing stuff (_, 642) | 0.4*window_height
     def __init__(self, page, parent, overlay_color, image_path=None, banner_title="", banner_content=None, button_text="Click", font=(FONT_B, 25), font2=(FONT, 15), button_command=None, button_colors=(LIGHT_MODE["accent"], DARK_MODE["accent"]), shifter=0, overlay=0.5): 
         #shifter and overlay are values between 0 and 1
         super().__init__(parent, fg_color="transparent")
