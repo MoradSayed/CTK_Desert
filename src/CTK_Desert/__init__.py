@@ -53,6 +53,7 @@ class Desert(ctk.CTk):
             self.App_Theme = ctk.get_appearance_mode()
         self.title_bar_color(TITLE_BAR_HEX_COLORS[f"{self.App_Theme.lower()}"]) #change the title bar color
         
+        self.bind_all("<Button-1>", lambda event: event.widget.focus_set())     #? to focus on the widget that was clicked on
         self.Home = Frame(self, usr_assets_dir=assets_dir, page_choise=page_choise)
         
         if spin:

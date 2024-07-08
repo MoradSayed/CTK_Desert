@@ -4,7 +4,7 @@ import numpy as np
 from .Theme import *
 from .utils import hvr_clr_g, change_pixel_color, color_finder
 import textwrap
-from typing import Union, Tuple, Callable
+from typing import Union, Tuple, Callable, Optional, Any, List
 
 class C_Widgits():
     def __init__(self, page_class, parent):
@@ -66,69 +66,158 @@ class C_Widgits():
     
 ###############################################################################################################################################################################################
 
-    def section_unit(self, section, title : str = "", widget : str =None, command: Callable =None, values : list =None, default : str =None):
-        """
-        Adds a unit to a section with specified parameters.
-
-        Parameters:
-        - section (ctk.Frame): The parent widget to which the unit will be added.
-        - title (str, optional): The title of the unit.
-        - widget (str, optional): The type of widget to be used in the unit. 
-            - Supported values: "combobox", "button", "checkbox", "entry", "switch".
-        - command (Callable, optional): The command to be executed when the widget is interacted with.
-        - values (list, optional): A list of values to populate a combobox widget.
-        - default: The default value for the widget.
-            - treated as the text for a button widget.
-
-        Returns:
-        - ctk.Frame: The frame containing the unit.
-
-        You can get the value of the widget using the gval method of the returned frame.
-        """
-                
-        unit_parent = section
-        unit_frame = ctk.CTkFrame(unit_parent, fg_color= "transparent")
+    def _sectionUnit(self, section, title : str = ""):
+               
+        unit_frame = ctk.CTkFrame(section, fg_color= "transparent")
 
         unit_label = ctk.CTkLabel(unit_frame, text=f"{title}", font=(FONT, 20))
         unit_label.pack(side="left", fill="x", padx=20, pady=10)
 
-        if widget == "combobox" or widget == "ComboBox":
-            unit_option = ctk.CTkComboBox(unit_frame, font=(FONT, 15), values = values, dropdown_font=(FONT, 15), state="readonly", command=command)
-            unit_option.set(f"{default}")
-            unit_option.pack(side="right", fill="x", padx=20, pady=10)
-
-        if widget == "button" or widget == "Button":
-            unit_option = ctk.CTkButton(unit_frame, text=f"{'' if default == None else default}", font=(FONT, 15), command=command, fg_color=(LIGHT_MODE["accent"], DARK_MODE["accent"]), hover_color=(hvr_clr_g(LIGHT_MODE["accent"], "l", 20), hvr_clr_g(DARK_MODE["accent"], "d", 20)))
-            unit_option.pack(side="right", fill="x", padx=20, pady=10)
-
-        if widget == "checkbox" or widget == "CheckBox":
-            unit_option = ctk.CTkCheckBox(unit_frame, text="", command=command, fg_color=(LIGHT_MODE["accent"], DARK_MODE["accent"]), hover_color=(hvr_clr_g(LIGHT_MODE["accent"], "l", 20), hvr_clr_g(DARK_MODE["accent"], "d", 20)), onvalue=True, offvalue=False,)
-            if default != None:
-                unit_option.configure(variable=default) 
-            unit_option.pack(side="right", fill="x", pady=10)
-
-        if widget == "entry" or widget == "Entry":
-            unit_option = ctk.CTkEntry(unit_frame, font=(FONT, 15), fg_color="transparent", placeholder_text=f"{default}", placeholder_text_color=(LIGHT_MODE["text"], DARK_MODE["text"]))
-            # unit_option.insert(0, f"{default}")
-            unit_option.pack(side="right", fill="x", padx=20, pady=10)
-
-        if widget == "switch" or widget == "Switch":
-            unit_option = ctk.CTkSwitch(unit_frame, command=command, fg_color=(hvr_clr_g(LIGHT_MODE["background"], "l", 85), hvr_clr_g(DARK_MODE["background"], "d", 85)), progress_color=(LIGHT_MODE["accent"], DARK_MODE["accent"]), onvalue=True, offvalue=False, text="", bg_color="transparent", border_color="transparent")
-            if default != None:
-                unit_option.configure(variable=default) 
-            unit_option.pack(side="right", fill="x", pady=10)
-
         unit_frame.pack(fill="x")
-
-        def gval():
-            if widget != None:
-                return unit_option.get()
-            return None
-        unit_frame.gval = gval
-
-        self.page.Page_update_manager(update_with_extend = False)
         
         return unit_frame
+    
+    def Button_unit(self, section, title : str = "",
+                    text: str = "Click",
+                    command: Callable = lambda: None,
+                    invert: bool = False,
+                    lone_widget: bool = False,
+                    fg_color: Optional[Union[str, Tuple[str, str]]] = (LIGHT_MODE["accent"], DARK_MODE["accent"]),
+                    font: tuple = (FONT, 15),
+                    width: int = 140,
+                    height: int = 28,
+                    ):
+        
+        if not lone_widget:
+            master = self._sectionUnit(section, title)
+        else:
+            master = section
+
+        if invert:
+            hover_color = None
+            text_color  = fg_color
+            border_color= fg_color
+            fg_color = "transparent"
+            border_width = 2
+        else:
+            border_width = None
+            border_color = None
+            text_color  = (LIGHT_MODE["text"], DARK_MODE["text"])
+            hover_color = (hvr_clr_g(fg_color[0], "l"), hvr_clr_g(fg_color[1], "d"))
+            
+        unit_option = ctk.CTkButton(master = master, text = text, font = font, text_color = text_color, width = width, height = height, fg_color = fg_color, hover_color = hover_color, border_width = border_width, border_color = border_color, command = command)
+        unit_option.pack(side="right", fill="x", padx=20, pady=10)
+
+        if invert:  #? Careful that fg_color is now stored in the text_color var, and fg_color is actually "transparent". 
+            textclr_onEntry = (LIGHT_MODE["text"], DARK_MODE["text"]) if text_color != (LIGHT_MODE["text"], DARK_MODE["text"]) else (DARK_MODE["text"], LIGHT_MODE["text"])
+            unit_option.bind("<Enter>", command=lambda e: unit_option.configure(fg_color=text_color, text_color=textclr_onEntry))
+            unit_option.bind("<Leave>", command=lambda e: unit_option.configure(fg_color="transparent", text_color=text_color))
+
+        self.page.Page_update_manager(update_with_extend = False)
+        return unit_option
+
+    def ComboBox_unit(self, section, title : str = "",
+                      values: Optional[List[str]] = None,
+                      default: str = None, 
+                      command: Union[Callable[[str], Any], None] = lambda var: None, 
+                      lone_widget: bool = False,
+                      variable: Union[ctk.Variable, None] = None, 
+                      fg_color: Optional[Union[str, Tuple[str, str]]] = (LIGHT_MODE["primary"], DARK_MODE["primary"]),
+                      border_color: Optional[Union[str, Tuple[str, str]]] = (hvr_clr_g(LIGHT_MODE["primary"], "l", 30), hvr_clr_g(DARK_MODE["primary"], "d", 30)),
+                      font: Optional[tuple] = (FONT, 15),
+                      width: int = 140,
+                      height: int = 28):
+
+        if not lone_widget:
+            master = self._sectionUnit(section, title)
+        else:
+            master = section
+
+        variable = ctk.StringVar(value=default) if variable is None else variable
+        unit_option = ctk.CTkComboBox(master, fg_color = fg_color, border_color=border_color, button_color=border_color, 
+                                      font = font, text_color = (LIGHT_MODE["text"], DARK_MODE["text"]), width = width, height = height, 
+                                      dropdown_fg_color=fg_color, dropdown_font=font, dropdown_text_color = (LIGHT_MODE["text"], DARK_MODE["text"]),  
+                                      state = "readonly", values = values, variable = variable, command = command)
+        # unit_option.set(f"{default}") if default is not None else None
+        unit_option.pack(side="right", fill="x", padx=20, pady=10)
+
+        self.page.Page_update_manager(update_with_extend = False)
+        return unit_option, variable
+    
+    def CheckBox_unit(self, section, title : str = "",
+                      default: bool = False, 
+                      command: Union[Callable[[], Any], None] = None,
+                      lone_widget: bool = False,
+                      variable: Union[ctk.Variable, None] = None,
+
+                      fg_color: Optional[Union[str, Tuple[str, str]]] = (LIGHT_MODE["accent"], DARK_MODE["accent"]),
+                      border_color: Optional[Union[str, Tuple[str, str]]] = None,
+                      checkmark_color: Optional[Union[str, Tuple[str, str]]] = None,
+
+                      width: int = 100,
+                      height: int = 24,
+                      checkbox_width: int = 24,
+                      checkbox_height: int = 24,
+                      ):
+        
+        if not lone_widget:
+            master = self._sectionUnit(section, title)
+        else:
+            master = section
+
+        variable = ctk.BooleanVar(value=default) if variable is None else variable
+        unit_option = ctk.CTkCheckBox(master, text="", width=width, height=height, checkbox_width=checkbox_width, checkbox_height=checkbox_height,
+                                      fg_color=fg_color, hover_color=(hvr_clr_g(fg_color[0], "l"), hvr_clr_g(fg_color[1], "d")), 
+                                      border_color=border_color, checkmark_color=checkmark_color,
+                                      command=command, variable=variable, onvalue=True, offvalue=False,)
+        # if default != None:
+        #     unit_option.configure(variable=default) 
+        unit_option.pack(side="right", fill="x", pady=10)
+
+        self.page.Page_update_manager(update_with_extend = False)
+        return unit_option, variable
+    
+    def Entry_unit(self, section, title : str = "",
+                   placeholder_text: Union[str, None] = None,
+                   lone_widget: bool = False,
+                   textvariable: Union[ctk.StringVar, None] = None,
+
+                   fg_color: Optional[Union[str, Tuple[str, str]]] = "transparent",
+                   font: Optional[tuple] = (FONT, 15),
+                   width: int = 140,
+                   height: int = 28,
+                   ):
+        
+        if not lone_widget:
+            master = self._sectionUnit(section, title)
+        else:
+            master = section
+
+        text_color = (LIGHT_MODE["text"], DARK_MODE["text"])
+        textvariable = ctk.StringVar(value=placeholder_text) if textvariable is None else textvariable
+        unit_option = ctk.CTkEntry(master, font=font, fg_color=fg_color, text_color=text_color, width=width, height=height, textvariable=textvariable)
+        unit_option.pack(side="right", fill="x", padx=20, pady=10)
+
+        if placeholder_text is not None:
+            plchldrClr = (LIGHT_MODE["primary"], DARK_MODE["primary"])
+            unit_option.configure(text_color= plchldrClr)
+            unit_option.bind("<FocusIn>", lambda e, wdgt = unit_option, clr = text_color, textVar = textvariable: self._entryFin(e, wdgt, clr, textVar, placeholder_text))
+            unit_option.bind("<FocusOut>", lambda e, wdgt = unit_option, clr = plchldrClr, textVar = textvariable: self._entryFout(e, wdgt, clr, textVar, placeholder_text))
+
+        self.page.Page_update_manager(update_with_extend = False)
+        return unit_option, textvariable
+    
+    def _entryFin(self, event, widget, color, textVar, placeHolder):
+        content = textVar.get()
+        if content == placeHolder or content == "":
+            widget.delete(0, "end")
+            widget.configure(text_color = color)
+
+    def _entryFout(self, event, widget, color, textVar, placeHolder):
+        content = textVar.get()
+        if content == placeHolder or content == "":
+            widget.insert(0, placeHolder)
+            widget.configure(text_color = color)
     
 ###############################################################################################################################################################################################
 

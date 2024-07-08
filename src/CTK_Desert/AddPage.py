@@ -28,19 +28,15 @@ class AddPage(Page_BM):
 
         self.c_wgts = C_Widgits(self, self.frame)
         
-        self.content_sec   =    self.c_wgts.section(padx=60)
-        self.page_name     =    self.c_wgts.section_unit(self.content_sec, title="Page Name", widget="entry", default="Pick a name")
-        self.icon_path_btn =    self.c_wgts.section_unit(self.content_sec, title="Icon Path", widget="button", default="Pick an icon", command= self.get_icon_path)
-        self.scrollableCBVar = ctk.BooleanVar(value=True)
-        self.scrollableCB  =    self.c_wgts.section_unit(self.content_sec, title="Scrollable", widget="checkbox", default=self.scrollableCBVar)
+        self.content_sec = self.c_wgts.section(padx=60)
+        self.page_name, self.page_nameVar = self.c_wgts.Entry_unit(self.content_sec, "Page Name", "Pick a name")
+        self.icon_path_btn = self.c_wgts.Button_unit(self.content_sec, "Icon Path", "Pick an icon", self.get_icon_path)
+        self.scrollableCB, self.scrollableCBVar = self.c_wgts.CheckBox_unit(self.content_sec, "Scrollable", True)
 
         self.confirmation_sec =    self.c_wgts.section(pady=5)
-        self.confirmation     =    self.c_wgts.section_unit(self.confirmation_sec, title="", widget="button", default="Create Page", command= self.create_page)
-        self.confirmation.winfo_children()[-1].configure(height=50, font=(FONT_B, 17))
-        self.Back            =    self.c_wgts.section_unit(self.confirmation, title="", widget="button", default="Back", command= lambda: Chest.Return_SubPage("Workspace", "AddPage"))
-        self.Back.winfo_children()[-1].configure(height=50, font=(FONT_B, 17), fg_color = (hvr_clr_g(LIGHT_MODE["primary"], "l", -20), hvr_clr_g(DARK_MODE["primary"], "d", -20)), hover_color = (LIGHT_MODE["primary"], DARK_MODE["primary"]))
-
-        
+        self.confirmation     =    self.c_wgts.Button_unit(self.confirmation_sec, "", "Create Page", self.create_page, height=50, font=(FONT_B, 17))
+        self.Back             =    self.c_wgts.Button_unit(self.confirmation.master, "", "Back", lambda: Chest.Return_SubPage("Workspace", "AddPage"), True,
+                                                           height=50, font=(FONT_B, 17), fg_color=(LIGHT_MODE["text"], DARK_MODE["text"]))
 
     def on_start(self):
         pass
@@ -60,7 +56,7 @@ class AddPage(Page_BM):
         self.icon_path = f.name if f else None
 
     def create_page(self):
-        file_name = self.page_name.gval()         # get field data (page name)
+        file_name = self.page_nameVar.get()         # get field data (page name)
         if not (file_name == "" or self.icon_path == None):
 
             with open (os.path.join(os.path.dirname(__file__), "Page_EX_Code.py"), 'r') as file:    # open the example code file

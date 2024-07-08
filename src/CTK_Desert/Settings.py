@@ -24,25 +24,17 @@ class Settings(Page_BM):
         self.settings_label = ctk.CTkLabel(self.frame, text="Settings", font=(FONT_B, 40))
         self.settings_label.pack(fill="x", padx=20, pady=20)
 
-        # Section 1
         self.appearance_sec = self.c_wdgts.section("Appearance")
-        # Section Units (options)
-            # Combobox 
-        self.theme_op   = self.c_wdgts.section_unit(section=self.appearance_sec, title="Theme", widget="combobox", values=["System", "Light", "Dark"], command=Chest.Set_Prefered_Theme, default=Chest.Get_Prefered_Theme().capitalize()) # default=self.window.App_Theme.capitalize()   This was the old one
-        #   # Button
-        self.Reset_op   = self.c_wdgts.section_unit(section=self.appearance_sec, title="Add a Section", widget="button", command=self.test_func, default= "+")
-        #   # Checkbox
-        # self.allow_op   = self.c_wdgts.section_unit(section=self.appearance_sec, title="Allow Themes to Change", widget="checkbox", command= lambda: print("NO func implemented _Chk"))
+        self.theme_op, themeVar = self.c_wdgts.ComboBox_unit(self.appearance_sec, "Theme", ["System", "Light", "Dark"], Chest.Get_Prefered_Theme().capitalize(), Chest.Set_Prefered_Theme)  #? combobox sends an argument with the chosen value
+        self.Reset_op   = self.c_wdgts.Button_unit(self.appearance_sec, "Add a Section", "+", self.test_func)
 
         self.Advanced_Settings = self.c_wdgts.section("Advanced Settings")
-        # Section Units (options)
-        self.WS_Var = ctk.BooleanVar(value=self.menu_page_frame.mainpages_dict["Workspace"].openable)
-        self.Dev_mode   = self.c_wdgts.section_unit(section=self.Advanced_Settings, title="Enable Dev mode", widget="checkbox", command= lambda : self.WS_openable_func(), default=self.WS_Var)
+        self.Dev_mode, self.WSstate   = self.c_wdgts.CheckBox_unit(self.Advanced_Settings, "Enable Dev mode", self.menu_page_frame.mainpages_dict["Workspace"].openable, self.WS_openable_func)
         
         self.addables_frame.pack(fill="x")
 
     def WS_openable_func(self):
-        self.menu_page_frame.mainpages_dict["Workspace"].openable = self.Dev_mode.gval()
+        self.menu_page_frame.mainpages_dict["Workspace"].openable = self.WSstate.get()
 
     def test_func(self):
         if self.test_num == 0:
