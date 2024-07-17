@@ -25,7 +25,8 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.Scrollable_fra
         self.openable = True
         self.started = False
         self.pickable = False
-        self.last_Known_size = (0, 0)
+        self.last_Known_size = (0, 0)   # the value is set in the Starting method #? holds the dimensions of the page window
+        self.content_frame_height = 0   #? holds the height of the content frame
 
         self.starting_call_list = []
         self.picking_call_list = []
@@ -51,50 +52,59 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.Scrollable_fra
                 width = self.winfo_width(), 
                 height = 10000, 
                 tags= "frame")
+            
+            self.content_frame = ctk.CTkFrame(self.Scrollable_frame, fg_color=color, 
+                                              background_corner_colors=((LIGHT_MODE["background"], DARK_MODE["background"]), (LIGHT_MODE["background"], DARK_MODE["background"]), (color), (color)))
+            self.content_frame.pack(fill="x")
 
             self.scroll_bar = ctk.CTkScrollbar(Chest.Manager.scroll_bar_frame, orientation="vertical", 
                                                command=self.Scrollable_canvas.yview, button_color=color, button_hover_color=(hvr_clr_g(color[0], "l"), hvr_clr_g(color[1], "d")))
             self.Scrollable_canvas.config(yscrollcommand=self.scroll_bar.set)
         else:
-            self.Scrollable_frame = ctk.CTkFrame(self, fg_color=color, bg_color=(LIGHT_MODE["background"], DARK_MODE["background"]))
-            self.Scrollable_frame.pack(fill="both", expand=True)
+            self.content_frame = ctk.CTkFrame(self, fg_color=color, bg_color=(LIGHT_MODE["background"], DARK_MODE["background"]))
+            self.content_frame.pack(fill="both", expand=True)
 
         self.menu_frame = self.tool_menu()
 
     def Page_update_manager(self, k=0, update_with_extend = True): #it updates the height of the page and the scrollable region
-        self.key = k if k else self.key
-        if self.key: #* this is to prevent the function from running when the page isn't opened yet from the "tab frame page"
-            if self.scrollable:
+        if self.scrollable:
+            self.key = k if k else self.key
+            if self.key: #* this is to prevent the function from running when the page isn't opened yet from the "tab frame page"
                 
-                if update_with_extend:
+                if update_with_extend:  #? with extend: means that i also wanna update the width of the frame
                     self.update()
                     self.Scrollable_canvas.itemconfigure("frame", width=self.winfo_width()) # update frame width
                     if self.pickable:
                         self.update()
                         self.Updating() # update widgets and user defined functions 
-
-                # get the height of the contents in the frame
-                self.update()
-                self.widget_children = self.Scrollable_frame.winfo_children()
-                if self.widget_children != []:
-                    self.max_height = self.Scrollable_frame.winfo_children()[-1].winfo_y() + self.Scrollable_frame.winfo_children()[-1].winfo_height()
-                else:
-                    self.max_height = 1
-
-                self.Scrollable_canvas.configure(scrollregion = (0, 0, self.winfo_width(), self.max_height))    # update scroll region
+                self.update_height()
                 
-                # Check if the height of the contents is greater than the height of the frame, to determine if the scrolling function should be on or not
-                if self.max_height > self.winfo_height():
-                    # using bind_all to make the scrolling function work even on the children of the canvas
-                    self.Scrollable_canvas.bind_all("<MouseWheel>", lambda event: self.scrolling_action(event)) 
-                    self.scroll_bar.pack(fill="y", expand=True)
-                else:
-                    self.Scrollable_canvas.unbind_all("<MouseWheel>")
-                    self.scroll_bar.pack_forget()
+    def update_height(self, event=None):
+        if event and event.height == self.content_frame_height:
+            # print("skipped")
+            return 1
+        
+        #? get the height of the contents in the frame
+        self.update()
+        self.max_height = self.content_frame.winfo_height()
+        self.Scrollable_canvas.configure(scrollregion = (0, 0, self.winfo_width(), self.max_height))    # update scroll region
+        
+        #? Check if the height of the contents is greater than the height of the frame, to determine if the scrolling function should be on or not
+        if self.max_height > self.winfo_height():
+            # using bind_all to make the scrolling function work even on the children of the canvas
+            self.Scrollable_canvas.bind_all("<MouseWheel>", lambda event: self.scrolling_action(event)) 
+            self.scroll_bar.pack(fill="y", expand=True)
+        else:
+            self.Scrollable_canvas.unbind_all("<MouseWheel>")
+            self.scroll_bar.pack_forget()
+        
+        if event:
+            # print(f"{event}: updating {self.widget_str}")
+            self.content_frame_height = self.content_frame.winfo_height()
             
     def scrolling_action(self, event):
         if str(event.widget).startswith(self.widget_str):
-            if self.scrolled == 62:
+            if self.scrolled == 28:
                 self.scrolled = 0
                 return 1
             else:
@@ -102,28 +112,30 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.Scrollable_fra
                 self.Scrollable_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
                 self.update()
                 self.after(1, self.scrolling_action, event)
-    
+
+    def get_pf(self):
+        return self.content_frame
+
     def Starting(self): # this function is called only once when the page is opened for the first time
         self.menu_frame.place(relx=0.5, rely=0.5, anchor="center")
         
         for func in self.starting_call_list:
             func()
         self.start_func()
+        self.last_Known_size = (self.parent.winfo_width(), self.parent.winfo_height())  # to set the initial known size of the parent window
+        self.content_frame_height = self.content_frame.winfo_height()
+        self.content_frame.bind("<Configure>", lambda event: self.update_height(event))
 
     def Picking(self): 
         self.menu_frame.place(relx=0.5, rely=0.5, anchor="center")
 
         if self.scrollable: 
-            if self.last_Known_size[1] != self.parent.winfo_height():
-                if self.last_Known_size[0] != self.parent.winfo_width():
-                    print("update")
-                    self.Page_update_manager()
-                else:
-                    print("extend")
-                    self.Page_update_manager(update_with_extend = False)
-            elif self.last_Known_size[0] != self.parent.winfo_width():
-                print("update")
+            if self.last_Known_size[0] != self.parent.winfo_width():
+                print("full update")
                 self.Page_update_manager()
+            elif self.last_Known_size[1] != self.parent.winfo_height():
+                print("height update")
+                self.Page_update_manager(update_with_extend = False)
             else:
                 if self.max_height > self.winfo_height():
                     self.Scrollable_canvas.bind_all("<MouseWheel>", lambda event: self.scrolling_action(event)) 
@@ -133,6 +145,7 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.Scrollable_fra
                     self.scroll_bar.pack_forget()
                 
             self.last_Known_size = (self.parent.winfo_width(), self.parent.winfo_height())
+            self.content_frame_height = self.content_frame.winfo_height()
 
         for func in self.picking_call_list:
             func()
@@ -144,6 +157,7 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.Scrollable_fra
             func()
         
         self.last_Known_size = (self.parent.winfo_width(), self.parent.winfo_height())
+        self.content_frame_height = self.content_frame.winfo_height()
 
         self.update_func()
 
@@ -152,6 +166,7 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.Scrollable_fra
             func()
 
         self.last_Known_size = (self.parent.winfo_width(), self.parent.winfo_height())
+        self.content_frame_height = self.content_frame.winfo_height()
 
         state = self.leave_func(event)
         return state 
@@ -185,11 +200,11 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.Scrollable_fra
 
     def hide_page(self):
         self.pack_forget()
-        self.menu_frame.place_forget()    #placed inside the file 
+        self.menu_frame.place_forget()
         if self.scrollable:
             self.Scrollable_canvas.unbind_all("<MouseWheel>")
             self.scroll_bar.pack_forget()
 
     def destroy_page(self):
         self.destroy()
-        self.menu_frame.destroy()    #placed inside the file
+        self.menu_frame.destroy()

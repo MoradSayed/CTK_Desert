@@ -10,7 +10,6 @@ class C_Widgits():
     def __init__(self, page_class, parent):
         self.page = page_class
         self.parent = parent
-        self.c = 1 # multiplier for y padding
         
     def section(self, 
                 title:      str = None, 
@@ -113,7 +112,7 @@ class C_Widgits():
             unit_option.bind("<Enter>", command=lambda e: unit_option.configure(fg_color=text_color, text_color=textclr_onEntry))
             unit_option.bind("<Leave>", command=lambda e: unit_option.configure(fg_color="transparent", text_color=text_color))
 
-        self.page.Page_update_manager(update_with_extend = False)
+        #self.page.Page_update_manager(update_with_extend = False)
         return unit_option
 
     def ComboBox_unit(self, section, title : str = "",
@@ -141,7 +140,7 @@ class C_Widgits():
         # unit_option.set(f"{default}") if default is not None else None
         unit_option.pack(side="right", fill="x", padx=20, pady=10)
 
-        self.page.Page_update_manager(update_with_extend = False)
+        #self.page.Page_update_manager(update_with_extend = False)
         return unit_option, variable
     
     def CheckBox_unit(self, section, title : str = "",
@@ -174,7 +173,7 @@ class C_Widgits():
         #     unit_option.configure(variable=default) 
         unit_option.pack(side="right", fill="x", pady=10)
 
-        self.page.Page_update_manager(update_with_extend = False)
+        #self.page.Page_update_manager(update_with_extend = False)
         return unit_option, variable
     
     def Entry_unit(self, section, title : str = "",
@@ -204,7 +203,7 @@ class C_Widgits():
             unit_option.bind("<FocusIn>", lambda e, wdgt = unit_option, clr = text_color, textVar = textvariable: self._entryFin(e, wdgt, clr, textVar, placeholder_text))
             unit_option.bind("<FocusOut>", lambda e, wdgt = unit_option, clr = plchldrClr, textVar = textvariable: self._entryFout(e, wdgt, clr, textVar, placeholder_text))
 
-        self.page.Page_update_manager(update_with_extend = False)
+        #self.page.Page_update_manager(update_with_extend = False)
         return unit_option, textvariable
     
     def _entryFin(self, event, widget, color, textVar, placeHolder):
@@ -219,44 +218,37 @@ class C_Widgits():
             widget.insert(0, placeHolder)
             widget.configure(text_color = color)
     
-###############################################################################################################################################################################################
+class small_tabs(ctk.CTkFrame):     #^ Currently working on this
+    def __init__(self, page_class, parent, img_width=250, img_height=150, padx=10, pady=10):
+        super().__init__(parent, fg_color="transparent")
+        self.page = page_class
+        self.parent = parent
+        self.image_width = img_width
+        self.image_height = img_height
+        self.padx = padx
+        self.pady = pady
+        self.canvas_color = self.page.get_scrframe_color()
 
-    def add_tab(self, section, text=None, image=None, size=None, simage_size=250, limage_size=250): # (frame >> frame_template, image input is of a normal image)
-        if image != None:        
-            im = Image.open(image)
-            w, h = im.size[0],im.size[1]
-            r = w/h
-                    
-        if size == "l":
-            # s = (limage_size, int(limage_size/r))
-            # im_ctk = ImageTk.PhotoImage(im.resize(s))
-            # self.large(section, text, im_ctk)
-            pass
-        elif size == "s":
-            s = (simage_size, int(simage_size/r))
-            im_ctk = ctk.CTkImage(im, size=s)
-            self.small(section, text, im_ctk)
-        
-        self.page.Page_update_manager(update_with_extend = False)
+        self.pack(expand=True, fill="x")
 
-    # Type num 1 (Ready to use)
-    def Label_func(self, parent_f):          
-        l_widget = ctk.CTkLabel(parent_f, text="No Recent projects", font=(FONT, 20), fg_color="transparent", text_color=(LIGHT_MODE["text"], DARK_MODE["text"]), anchor="center")
-        l_widget.pack(fill="x", padx=20, pady=10*self.c, expand=True)
+    def tab(self, text, image, button_icon=None, icon_size=20, button_command=None):  
+        tab_cont = ctk.CTkFrame(self, fg_color="transparent", height=300, width=self.parent.winfo_width())
 
-    # Type num 3 (Ready to use)
-    def small(self, parent_f, text, image):  
-        tab_cont = ctk.CTkFrame(parent_f, fg_color="transparent", height=300, width=self.parent.winfo_width())
+        im = Image.open(image)
+        w, h = im.size[0],im.size[1]
+        r = w/h
+        s = (self.image_width, int(self.image_width/r))
+        im_ctk = ctk.CTkImage(im, size=s)
 
-        tab_img = ctk.CTkButton(tab_cont, fg_color="transparent", text="", image=image, hover_color=self.page.get_scrframe_color())
-        tab_img.pack(padx=20, pady=10*self.c, side="left")
+        tab_img = ctk.CTkButton(tab_cont, fg_color="transparent", text="", image=im_ctk, hover_color=self.page.get_scrframe_color())
+        tab_img.pack(padx=20, pady=10, side="left")
 
         tab_cont.update()
         tit_f   = ctk.CTkFrame(tab_cont, fg_color="transparent",)
         newtext = textwrap.shorten(text, 50)
         tab_tit = ctk.CTkLabel(tit_f, fg_color="transparent", text=f"{newtext}", font=(FONT, 20), anchor="w")
         tab_tit.pack(fill = "both", expand = True)
-        tit_f.pack(pady=10*self.c, fill = "x", expand = True, side="left")
+        tit_f.pack(pady=10, fill = "x", expand = True, side="left")
 
         add_btn = ctk.CTkButton(tab_cont, width=30, height=30, text="+", font=(FONT_B, 30),  
                                 fg_color=(LIGHT_MODE["accent"], DARK_MODE["accent"]), 
@@ -266,8 +258,10 @@ class C_Widgits():
 
         tab_cont.pack(expand=True, fill="both", pady=10)
 
-        White_line = ctk.CTkFrame(parent_f, fg_color=(DARK_MODE["background"], LIGHT_MODE["background"]), height=2)
+        White_line = ctk.CTkFrame(self, fg_color=(DARK_MODE["background"], LIGHT_MODE["background"]), height=2)
         White_line.pack(fill="x", expand=True, padx = 20)
+
+        # self.page.Page_update_manager(update_with_extend = False)
 
 class large_tabs(ctk.CTkFrame):
     def __init__(self, page_class, parent, img_width=500, img_height=300, padx=10, pady=10, autofit=True):
@@ -307,7 +301,7 @@ class large_tabs(ctk.CTkFrame):
                 self.tabs[len(self.rows)-1] = []
             self.tabs[len(self.rows)-1].append(expander)
             
-        self.page.Page_update_manager(update_with_extend = False)
+        #self.page.Page_update_manager(update_with_extend = False)
         self.constructed_expander = None
         if len(self.rows) == 1:
             self.tabs_per_row = len(self.tabs[0])
@@ -474,7 +468,7 @@ class large_tabs(ctk.CTkFrame):
         self.rows[row+1].destroy()
         del self.rows[row+1] 
 
-    def show(self): # simplify it (p_u_m)
+    def show(self):
         """Display the hidden widget and its tabs
         """
         if self.hidden:
@@ -487,7 +481,7 @@ class large_tabs(ctk.CTkFrame):
                 self.ltabs_update()
             else:
                 self.hidden = False
-            self.page.Page_update_manager(update_with_extend = False)
+            #self.page.Page_update_manager(update_with_extend = False)
 
     def hide(self):
         """Hide the Widget and its tabs
@@ -497,7 +491,7 @@ class large_tabs(ctk.CTkFrame):
             final_height = self.parent.winfo_height() - self.winfo_height()
             self.pack_forget()
             self.parent.configure(height=final_height)
-            self.page.Page_update_manager(update_with_extend = False)
+            #self.page.Page_update_manager(update_with_extend = False)
 
     def page_function_calls(self):
         self.page.updating_call_list.append(self.ltabs_update)
@@ -512,7 +506,6 @@ class Banner(ctk.CTkFrame): #! change the image resizing stuff (_, 642) | 0.4*wi
         self.page = page
         self.parent_frame = parent
         self.canvas_color = overlay_color
-        self.created = False
 
         self.pack(fill="both")
         self.im = Image.open(r"C:\Users\Morad\Desktop\Page_layout_library\Assets\Images\val.png") if image_path is None else Image.open(image_path)
@@ -586,11 +579,6 @@ class Banner(ctk.CTkFrame): #! change the image resizing stuff (_, 642) | 0.4*wi
             if self.banner_content is not None:
                 self.canvas.moveto(b_content  , (self.s[0]*(1/4)*(1/4)), start_y_pos + bbox_title[3]+self.padding)
             self.canvas.moveto(b_btn      , (self.s[0]*(1/4)*(1/4)), start_y_pos + bbox_content[3]+(self.multi*self.padding))
-
-            if self.created == False:
-                self.page.Page_update_manager(update_with_extend = False)
-                self.created = True
-            #? all pages updates are called from the tab_frame_page when updates occur
 
     def page_function_calls(self):
         self.page.starting_call_list.append(self.init)

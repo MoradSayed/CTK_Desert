@@ -6,7 +6,7 @@ import customtkinter as ctk
 from .Core import userChest as Chest
 from .Page_base_model import Page_BM
 from .Theme import *
-from .Widgits import C_Widgits
+from .Widgits import C_Widgits, small_tabs
 
 
 # don't ever pack the frame, it will be packed in the Tab_Page_Frame.py
@@ -16,7 +16,7 @@ class Settings(Page_BM):
         self.window = Chest.Window
         self.menu_page_frame = Chest.Manager
         self.on_theme_change_func = None
-        self.frame = self.Scrollable_frame
+        self.frame = self.get_pf()
         self.addables_frame = ctk.CTkFrame(self.frame, fg_color="transparent")
         self.c_wdgts = C_Widgits(page_class = self, parent = self.addables_frame)
         self.test_num = 0
@@ -40,5 +40,5 @@ class Settings(Page_BM):
         if self.test_num == 0:
             self.test_num += 1
             self.tst1 = self.c_wdgts.section("WELL Well well...")
-        self.c_wdgts.add_tab(self.tst1, f"img #{random.randint(100000, 999999)}", "C:\\Users\\Morad\\Downloads\\wallpaperflare.com_wallpaper.jpg", "l")
-
+            self.tst2 = small_tabs(self, self.tst1)
+        self.tst2.tab(f"img #{random.randint(100000, 999999)}", r"C:\\Users\\Morad\\Downloads\\wallpaperflare.com_wallpaper.jpg")

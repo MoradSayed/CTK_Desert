@@ -6,4 +6,4 @@ from CTK_Desert.Core import userChest as Chest
 class CUNAME__C(Page_BM):
     def __init__(self):
         super().__init__(scrollable="SCRL_VAL__")
-        self.frame = self.Scrollable_frame      # Parent of all children in this page
+        self.parent = self.get_pf()

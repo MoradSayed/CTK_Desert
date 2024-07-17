@@ -14,7 +14,7 @@ class Workspace(Page_BM):
     def __init__(self):
         super().__init__(scrollable=True, start_func=self.on_start)
         self.menu_page_frame = Chest.Manager
-        self.frame = self.Scrollable_frame # Parent of all children in this page
+        self.frame = self.get_pf()
         self.mode = ctk.get_appearance_mode()
         self.frame_clr = color_finder(self.frame)
         self.add_menu_button(r"C:\Users\Morad\Downloads\icons8-reload-64.png", lambda: Chest.reload_page("Workspace"))

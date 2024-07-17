@@ -15,7 +15,7 @@ class AddPage(Page_BM):
     def __init__(self):
         super().__init__(start_func=self.on_start, pick_func=self.on_pick, update_func=self.on_update, leave_func=self.on_leave)
         self.menu_page_frame = Chest.Manager
-        self.frame = self.Scrollable_frame # Parent of all children in this page
+        self.frame = self.get_pf()
         self.mode = ctk.get_appearance_mode()
         self.frame_clr = color_finder(self.frame)
         self.pages_path = Chest.userPagesDirectory
