@@ -301,7 +301,7 @@ class large_tabs(ctk.CTkFrame):
                 self.tabs[len(self.rows)-1] = []
             self.tabs[len(self.rows)-1].append(expander)
             
-        #self.page.Page_update_manager(update_with_extend = False)
+        self.update() #self.page.Page_update_manager(update_with_extend = False)
         self.constructed_expander = None
         if len(self.rows) == 1:
             self.tabs_per_row = len(self.tabs[0])
