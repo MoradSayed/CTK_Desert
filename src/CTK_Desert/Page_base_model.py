@@ -66,7 +66,7 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.Scrollable_fra
 
         self.menu_frame = self.tool_menu()
 
-    def Page_update_manager(self, k=0, update_with_extend = True): #it updates the height of the page and the scrollable region
+    def Page_update_manager(self, k=0, update_with_extend = True): #it updates the width of the page and the scrollable region
         if self.scrollable:
             self.key = k if k else self.key
             if self.key: #* this is to prevent the function from running when the page isn't opened yet from the "tab frame page"
@@ -79,10 +79,11 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.Scrollable_fra
                         self.Updating() # update widgets and user defined functions 
                 self.update_height()
                 
-    def update_height(self, event=None):
+    def update_height(self, event=None):    #! a delay timer needs to be added here, so that if more than one item is being added the function isn't triggered untill all the items are added
         if event and event.height == self.content_frame_height:
             # print("skipped")
             return 1
+        # print(f"updating height: {event}")
         
         #? get the height of the contents in the frame
         self.update()
@@ -206,5 +207,7 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.Scrollable_fra
             self.scroll_bar.pack_forget()
 
     def destroy_page(self):
+        self.scroll_bar.destroy()
         self.destroy()
         self.menu_frame.destroy()
+

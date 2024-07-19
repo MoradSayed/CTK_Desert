@@ -1,3 +1,4 @@
+import customtkinter as ctk
 from ctypes import windll
 import os, json, customtkinter as ctk
 from winreg import *
@@ -19,6 +20,9 @@ class Chest():
         self.toolsFrame = self.Manager.apps_frame
         self.Dialog_Manager = self.Manager.dialog_widget
         self.scaleFactor = windll.shcore.GetScaleFactorForDevice(0) / 100
+
+        self.thread_reload_var =  ctk.StringVar()
+        self.thread_reload_var.trace_add("write", lambda *args: self.reload_page(self.thread_reload_var.get()))
 
     def get_current_page(self):
         """Returns the Displayed Page name

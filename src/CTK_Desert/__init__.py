@@ -1,5 +1,7 @@
 import json, os, inspect
 import customtkinter as ctk
+import socket
+import threading, time
 try:
     from ctypes import byref, c_int, sizeof, windll 
 except:
@@ -9,7 +11,7 @@ from .Core import userChest as Chest
 from .Theme import *
 
 class Desert(ctk.CTk):
-    def __init__ (self, assets_dir, page_choise="Settings", spin=False):
+    def __init__ (self, assets_dir, page_choise="Settings", spin=True, reload_on_save=False):
         super().__init__(fg_color= (LIGHT_MODE["background"], DARK_MODE["background"]))
         caller_frame = inspect.stack()[1]
         caller_module = inspect.getmodule(caller_frame[0])
@@ -56,6 +58,9 @@ class Desert(ctk.CTk):
         self.bind_all("<Button-1>", lambda event: event.widget.focus_set())     #? to focus on the widget that was clicked on
         self.Home = Frame(self, usr_assets_dir=assets_dir, page_choise=page_choise)
         
+        if reload_on_save:
+            server_thread = threading.Thread(target=self.server_thread, daemon=True)
+            server_thread.start()
         if spin:
             self.mainloop()
 
@@ -82,3 +87,15 @@ class Desert(ctk.CTk):
         # new_style = current_style & ~WS_CAPTION & ~WS_SYSMENU
         # windll.user32.SetWindowLongW(hwnd, GWL_STYLE, new_style)
         # windll.user32.SetWindowPos(hwnd, 0, 0, 0, 0, 0, 0x27)  # Update the window to apply the changes
+
+    def server_thread(self):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
+            server.bind(('localhost', 4831))
+            server.listen()
+            while True:
+                # print("waiting for data")
+                client_socket, addr = server.accept()   # this is a blocking function
+                # print("got data")
+                data = client_socket.recv(1024).decode('utf-8')
+                if data:
+                    Chest.thread_reload_var.set(data)
