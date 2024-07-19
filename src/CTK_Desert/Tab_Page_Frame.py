@@ -152,11 +152,13 @@ class Frame(ctk.CTkFrame):
             self.updating = False
 
     def update_sizes(self): 
+        if self.size_event.width != self.window_width:
+            self.pages_dict[self.page_choise].Page_update_manager()
+        else:
+            self.pages_dict[self.page_choise].check_scroll_length()
+
         self.window_width = self.size_event.width
         self.window_height = self.size_event.height
-        # self.menu_relwidth = 75/self.window_width
-        
-        self.pages_dict[self.page_choise].Page_update_manager()
 
     def ext_pages_importer(self, module_name, reload=False):
         in_directory = self.U_Pages_dir
