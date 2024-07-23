@@ -1,6 +1,7 @@
 import customtkinter as ctk
 from PIL import Image, ImageTk
 import numpy as np
+from .Page_base_model import Page_BM
 from .Theme import *
 from .utils import hvr_clr_g, change_pixel_color, color_finder
 import textwrap
@@ -13,12 +14,13 @@ class C_Widgits():
         
     def section(self, 
                 title:      str = None, 
+                fg_color:   Union[tuple, str] = "transparent", 
                 font:       Union[tuple, ctk.CTkFont] = (FONT_B, 25), 
                 text_color: Union[str, Tuple[str, str]] = (LIGHT_MODE["text"], DARK_MODE["text"]),
                 padx: Union[int, Tuple[int, int]] = 0, 
                 pady: Union[int, Tuple[int, int]] = 10):
         
-        section_frame = ctk.CTkFrame(self.parent, fg_color= "transparent")
+        section_frame = ctk.CTkFrame(self.parent, fg_color= fg_color)
 
         if title != None:
             title_frame = ctk.CTkFrame(section_frame, fg_color= "transparent")  # contains the label and the button (if it exists).
@@ -112,7 +114,6 @@ class C_Widgits():
             unit_option.bind("<Enter>", command=lambda e: unit_option.configure(fg_color=text_color, text_color=textclr_onEntry))
             unit_option.bind("<Leave>", command=lambda e: unit_option.configure(fg_color="transparent", text_color=text_color))
 
-        #self.page.Page_update_manager(update_with_extend = False)
         return unit_option
 
     def ComboBox_unit(self, section, title : str = "",
@@ -140,7 +141,6 @@ class C_Widgits():
         # unit_option.set(f"{default}") if default is not None else None
         unit_option.pack(side="right", fill="x", padx=20, pady=10)
 
-        #self.page.Page_update_manager(update_with_extend = False)
         return unit_option, variable
     
     def CheckBox_unit(self, section, title : str = "",
@@ -173,7 +173,6 @@ class C_Widgits():
         #     unit_option.configure(variable=default) 
         unit_option.pack(side="right", fill="x", pady=10)
 
-        #self.page.Page_update_manager(update_with_extend = False)
         return unit_option, variable
     
     def Entry_unit(self, section, title : str = "",
@@ -203,7 +202,6 @@ class C_Widgits():
             unit_option.bind("<FocusIn>", lambda e, wdgt = unit_option, clr = text_color, textVar = textvariable: self._entryFin(e, wdgt, clr, textVar, placeholder_text))
             unit_option.bind("<FocusOut>", lambda e, wdgt = unit_option, clr = plchldrClr, textVar = textvariable: self._entryFout(e, wdgt, clr, textVar, placeholder_text))
 
-        #self.page.Page_update_manager(update_with_extend = False)
         return unit_option, textvariable
     
     def _entryFin(self, event, widget, color, textVar, placeHolder):
@@ -219,49 +217,117 @@ class C_Widgits():
             widget.configure(text_color = color)
     
 class small_tabs(ctk.CTkFrame):     #^ Currently working on this
-    def __init__(self, page_class, parent, img_width=250, img_height=150, padx=10, pady=10):
+    def __init__(self, page_class: Page_BM, parent, img_width=300, img_height=180, padx=20, pady=(0, 10)):
         super().__init__(parent, fg_color="transparent")
         self.page = page_class
         self.parent = parent
         self.image_width = img_width
         self.image_height = img_height
-        self.padx = padx
-        self.pady = pady
         self.canvas_color = self.page.get_scrframe_color()
+        self.tabs = [] 
+        self.images = [] 
+        
+        self.reorder_btn_state = 0
+        self.unit_h = 0
+        self.swapping = 0
 
-        self.pack(expand=True, fill="x")
+        self.pack(expand=True, fill="x", padx=padx, pady=pady)
+        # self.page_function_calls()
+        
+    def tab(self, text, image, button_icon=None, button_command=None, icon_size=(25, 25)):  #! current problem is with text wrapping
+        if self.reorder_btn_state:
+            self.reorder()  # closes the reorder action if it is active
 
-    def tab(self, text, image, button_icon=None, icon_size=20, button_command=None):  
-        tab_cont = ctk.CTkFrame(self, fg_color="transparent", height=300, width=self.parent.winfo_width())
+        tab_cont = ctk.CTkFrame(self, fg_color="transparent")
 
-        im = Image.open(image)
-        w, h = im.size[0],im.size[1]
-        r = w/h
-        s = (self.image_width, int(self.image_width/r))
-        im_ctk = ctk.CTkImage(im, size=s)
+        if isinstance(image, Image.Image):
+            im = image
+        elif isinstance(image, str):
+            im = Image.open(image)
+        else:
+            raise TypeError("image should be a path to an image or an Image object.")
+        
+        ratio = im.size[0]/im.size[1]
+        if ratio > (self.image_width/self.image_height):
+            s = (int(self.image_height*ratio), self.image_height)
+        else:
+            s = (self.image_width, int(self.image_width/ratio))
+        im_ctk = ImageTk.PhotoImage(im.resize(s))
+        self.images.append(im_ctk)
 
-        tab_img = ctk.CTkButton(tab_cont, fg_color="transparent", text="", image=im_ctk, hover_color=self.page.get_scrframe_color())
-        tab_img.pack(padx=20, pady=10, side="left")
+        canvas = ctk.CTkCanvas(tab_cont, bg=self.canvas_color[0] if ctk.get_appearance_mode() == "Light" else self.canvas_color[1], 
+                               bd=0, highlightthickness=0, relief='ridge', width=self.image_width, height=self.image_height)
+        canvas.pack(side="left", pady=30)
+        canvas.create_image(self.image_width/2, self.image_height/2, anchor="center", image=im_ctk)
 
-        tab_cont.update()
-        tit_f   = ctk.CTkFrame(tab_cont, fg_color="transparent",)
-        newtext = textwrap.shorten(text, 50)
-        tab_tit = ctk.CTkLabel(tit_f, fg_color="transparent", text=f"{newtext}", font=(FONT, 20), anchor="w")
-        tab_tit.pack(fill = "both", expand = True)
-        tit_f.pack(pady=10, fill = "x", expand = True, side="left")
+        tab_title = ctk.CTkLabel(tab_cont, fg_color="transparent", text=f"{text}", font=(FONT, 20), anchor="w", justify="left")
+        tab_title.pack(padx=20, side="left")
 
-        add_btn = ctk.CTkButton(tab_cont, width=30, height=30, text="+", font=(FONT_B, 30),  
-                                fg_color=(LIGHT_MODE["accent"], DARK_MODE["accent"]), 
-                                hover_color=(hvr_clr_g(LIGHT_MODE["accent"], "l", 20), hvr_clr_g(DARK_MODE["accent"], "d", 20)), 
-                                command= lambda : None)                 # command= lambda num = self.image_count.queue[0]: self.add_image_btn_command(num) #
-        add_btn.place(relx=0.975, rely=0.5, anchor="e")
+        if button_icon:
+            button_image = change_pixel_color(button_icon, color=f'{ICONS["_l"]}+{ICONS["_d"]}', return_img=True)
+            button_image = ctk.CTkImage(*button_image, size=icon_size)
+            ctk.CTkButton(tab_cont, text="", fg_color="transparent", hover_color=self.canvas_color, image=button_image, 
+                          command=button_command, width=30, height=30).pack(side="right")
 
-        tab_cont.pack(expand=True, fill="both", pady=10)
+        tab_cont.pack(expand=True, fill="both")
+        # tab_title.update()
+        # tab_title.configure(wraplength = 3*tab_title.winfo_width()/4)
 
-        White_line = ctk.CTkFrame(self, fg_color=(DARK_MODE["background"], LIGHT_MODE["background"]), height=2)
-        White_line.pack(fill="x", expand=True, padx = 20)
+        White_line = ctk.CTkFrame(tab_cont, fg_color=(DARK_MODE["background"], LIGHT_MODE["background"]), height=2)
+        White_line.place(relx=0, rely=1, relwidth=1, anchor="sw")
 
-        # self.page.Page_update_manager(update_with_extend = False)
+        self.tabs.append(tab_cont)
+        return tab_cont
+
+    def reorder(self): # for in app swap
+        self.reorder_btn_state = not self.reorder_btn_state
+        if self.reorder_btn_state:
+            # print("starting reorder")
+            self.unit_h = self.tabs[0].winfo_height()
+            for tab in self.tabs:
+                tab.bind("<Enter>"   , lambda e, t=tab: t.configure(fg_color=(LIGHT_MODE["primary"], DARK_MODE["primary"])))
+                tab.bind("<Leave>"   , lambda e, t=tab: t.configure(fg_color="transparent"))
+                tab.bind("<B1-Motion>", lambda e, t=tab: self._on_motion(e, t))    # perfect
+        else:
+            # print("closing reorder")
+            for tab in self.tabs:
+                tab.unbind("<Enter>")
+                tab.unbind("<Leave>")
+                tab.unbind("<B1-Motion>")
+
+    def _on_motion(self, event, tab):
+        target_step = event.y/self.unit_h
+        if target_step < 0:
+            target_step -= 1
+        target_step = int(target_step)
+        # print(f"event: {event.y}, step: {target_step}")
+        if self.swapping == 0 and (target_step >= 1 or target_step <= -1):
+            self.swapping = 1
+            self.swap(tab, target_step)
+            self.swapping = 0
+
+    def swap(self, tab, step):  # for code swap
+        current_pos = self.tabs.index(tab)
+        target_pos = current_pos + step
+        tabs_count = len(self.tabs)
+        
+        if target_pos >= 0 and target_pos < tabs_count:
+            self.tabs.insert(target_pos, self.tabs.pop(current_pos))
+
+            if target_pos+1 < tabs_count:
+                self.tabs[target_pos].pack(before=self.tabs[target_pos+1], expand=True, fill="both")
+            elif target_pos+1 == tabs_count:
+                self.tabs[target_pos].pack(after=self.tabs[target_pos-1], expand=True, fill="both")
+            
+            self.update()   # update so that if the bind is still holding an old value it lets it out, so that it doesn't cause a swap after the <self.swapping> lock has been unlocked
+
+    def _on_update(self):
+        for tab in self.tabs:
+            label = tab.winfo_children()[1]
+            label.configure(wraplength = 3*label.winfo_width()/4)
+
+    def page_function_calls(self):
+        self.page.updating_call_list.append(self._on_update)
 
 class large_tabs(ctk.CTkFrame):
     def __init__(self, page_class, parent, img_width=500, img_height=300, padx=10, pady=10, autofit=True):
@@ -301,7 +367,7 @@ class large_tabs(ctk.CTkFrame):
                 self.tabs[len(self.rows)-1] = []
             self.tabs[len(self.rows)-1].append(expander)
             
-        self.update() #self.page.Page_update_manager(update_with_extend = False)
+        self.update()
         self.constructed_expander = None
         if len(self.rows) == 1:
             self.tabs_per_row = len(self.tabs[0])
@@ -309,7 +375,12 @@ class large_tabs(ctk.CTkFrame):
         return expander.winfo_children()[0].winfo_children()
 
     def constructor(self, text=None, image=None, button_icon=None, icon_size=20, button_command=None):
-        im = Image.open(image)
+        if isinstance(image, Image.Image):
+            im = image
+        elif isinstance(image, str):
+            im = Image.open(image)
+        else:
+            raise TypeError("image should be a path to an image or an Image object.")
         w, h = im.size[0],im.size[1]
         r = w/h
         if r > (self.image_width/self.image_height):
@@ -319,7 +390,7 @@ class large_tabs(ctk.CTkFrame):
         im_ctk = ImageTk.PhotoImage(im.resize(s))
         self.images.append(im_ctk)
 
-        expander = ctk.CTkFrame(master=self.parent, fg_color=self.canvas_color, bg_color=self.canvas_color)
+        expander = ctk.CTkFrame(master=self.parent, fg_color="transparent")
         tab_cont = ctk.CTkFrame(expander, fg_color="transparent")
         
         canvas = ctk.CTkCanvas(tab_cont, bg=self.canvas_color[0] if ctk.get_appearance_mode() == "Light" else self.canvas_color[1], bd=0, highlightthickness=0, relief='ridge', width=self.image_width, height=self.image_height)
@@ -337,7 +408,7 @@ class large_tabs(ctk.CTkFrame):
         return expander
 
     def butt0n_icon(self, parent, button_icon, icon_size: int = 20, button_command : Callable = None, override_color: bool = False):  # parent is a list of two elements, the first is the canvas and the second is the content frame
-        if override_color:
+        if override_color:  #! change this so that if he pass a tuple then automatically override the color, if it is just an image then change the color
             image = Image.open(button_icon)
             image = [image, image]
         else:
@@ -351,7 +422,7 @@ class large_tabs(ctk.CTkFrame):
         actbtn.pack(side="right", padx=5, pady=5)
 
     def row_frame(self):
-        if len(self.rows) == 0 or self.rows[-1].winfo_width() < (self.image_width+self.padx)*(len(self.tabs[len(self.rows)-1])+1): # width of a tab * (number of tabs in the last row + the one that i wanna create):
+        if len(self.rows) == 0 or self.rows[-1].winfo_width() < (self.image_width+(3*self.padx))*(len(self.tabs[len(self.rows)-1])+1): # width of a tab * (number of tabs in the last row + the one that i wanna create):
             row = ctk.CTkFrame(self, fg_color="transparent")
             row.pack(fill="x", expand=True)
         else:
@@ -481,7 +552,6 @@ class large_tabs(ctk.CTkFrame):
                 self.ltabs_update()
             else:
                 self.hidden = False
-            #self.page.Page_update_manager(update_with_extend = False)
 
     def hide(self):
         """Hide the Widget and its tabs
@@ -491,7 +561,6 @@ class large_tabs(ctk.CTkFrame):
             final_height = self.parent.winfo_height() - self.winfo_height()
             self.pack_forget()
             self.parent.configure(height=final_height)
-            #self.page.Page_update_manager(update_with_extend = False)
 
     def page_function_calls(self):
         self.page.updating_call_list.append(self.ltabs_update)
