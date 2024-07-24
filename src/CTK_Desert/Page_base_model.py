@@ -112,13 +112,13 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.Scrollable_fra
 
     def Starting(self): # this function is called only once when the page is opened for the first time
         self.menu_frame.place(relx=0.5, rely=0.5, anchor="center")
+        self.content_frame.bind("<Configure>", lambda event: self.update_height(event)) # put up here so that it works with the starting function
         
         for func in self.starting_call_list:
             func()
         self.start_func()
         self.last_Known_size = (self.parent.winfo_width(), self.parent.winfo_height())  # to set the initial known size of the parent window
         self.content_frame_height = self.content_frame.winfo_height()
-        self.content_frame.bind("<Configure>", lambda event: self.update_height(event))
 
     def Picking(self): 
         self.menu_frame.place(relx=0.5, rely=0.5, anchor="center")
