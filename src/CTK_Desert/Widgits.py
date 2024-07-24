@@ -1,6 +1,7 @@
 import customtkinter as ctk
 from PIL import Image, ImageTk
 import numpy as np
+from .Core import userChest as Chest
 from .Page_base_model import Page_BM
 from .Theme import *
 from .utils import hvr_clr_g, change_pixel_color, color_finder
@@ -225,20 +226,31 @@ class small_tabs(ctk.CTkFrame):     #^ Currently working on this
         self.image_height = img_height
         self.canvas_color = self.page.get_scrframe_color()
         self.tabs = [] 
+        self.slots = []
         self.images = [] 
         
         self.reorder_btn_state = 0
         self.unit_h = 0
         self.swapping = 0
 
+        self.tab_index = None
+        self.event_y_offset = None
+
+        self.whiteLine_pady = 25
+
+        self.started = False
+
         self.pack(expand=True, fill="x", padx=padx, pady=pady)
-        # self.page_function_calls()
+        self.page_function_calls()
         
     def tab(self, text, image, button_icon=None, button_command=None, icon_size=(25, 25)):  #! current problem is with text wrapping
         if self.reorder_btn_state:
             self.reorder()  # closes the reorder action if it is active
 
-        tab_cont = ctk.CTkFrame(self, fg_color="transparent")
+        tab_cont = ctk.CTkFrame(self, fg_color="transparent", height=self.image_height+self.whiteLine_pady+2)   # 2 for the white line
+
+        st_frame = ctk.CTkFrame(self, fg_color="transparent", height=self.image_height)
+        ctk.CTkLabel(tab_cont, text="⥮", font=("", 30), fg_color="transparent", width=28)   # ⠿
 
         if isinstance(image, Image.Image):
             im = image
@@ -255,71 +267,118 @@ class small_tabs(ctk.CTkFrame):     #^ Currently working on this
         im_ctk = ImageTk.PhotoImage(im.resize(s))
         self.images.append(im_ctk)
 
-        canvas = ctk.CTkCanvas(tab_cont, bg=self.canvas_color[0] if ctk.get_appearance_mode() == "Light" else self.canvas_color[1], 
+        canvas = ctk.CTkCanvas(st_frame, bg=self.canvas_color[0] if ctk.get_appearance_mode() == "Light" else self.canvas_color[1], 
                                bd=0, highlightthickness=0, relief='ridge', width=self.image_width, height=self.image_height)
-        canvas.pack(side="left", pady=30)
+        canvas.pack(side="left")
         canvas.create_image(self.image_width/2, self.image_height/2, anchor="center", image=im_ctk)
 
-        tab_title = ctk.CTkLabel(tab_cont, fg_color="transparent", text=f"{text}", font=(FONT, 20), anchor="w", justify="left")
+        tab_title = ctk.CTkLabel(st_frame, fg_color="transparent", text=f"{text}", font=(FONT, 20), anchor="w", justify="left")
         tab_title.pack(padx=20, side="left")
 
-        if button_icon:
+        if button_icon: #^ make it so that it can be a directory(str), actual_image(Image.Image), custom_image(tuple), or None
             button_image = change_pixel_color(button_icon, color=f'{ICONS["_l"]}+{ICONS["_d"]}', return_img=True)
             button_image = ctk.CTkImage(*button_image, size=icon_size)
-            ctk.CTkButton(tab_cont, text="", fg_color="transparent", hover_color=self.canvas_color, image=button_image, 
+            ctk.CTkButton(st_frame, text="", fg_color="transparent", hover_color=self.canvas_color, image=button_image, 
                           command=button_command, width=30, height=30).pack(side="right")
 
-        tab_cont.pack(expand=True, fill="both")
+        st_frame.pack(in_=tab_cont, expand=True, fill="x")
+        tab_cont.pack(expand=True, fill="x")
         # tab_title.update()
         # tab_title.configure(wraplength = 3*tab_title.winfo_width()/4)
 
         White_line = ctk.CTkFrame(tab_cont, fg_color=(DARK_MODE["background"], LIGHT_MODE["background"]), height=2)
-        White_line.place(relx=0, rely=1, relwidth=1, anchor="sw")
+        White_line.pack(fill="x", side="bottom", pady=self.whiteLine_pady)
 
-        self.tabs.append(tab_cont)
+        self.tabs.append(st_frame)
+        self.slots.append(tab_cont)
+        if self.started:
+            self.update()
+            tab_cont.configure(height=tab_cont.winfo_height()/Chest.scaleFactor)
+            tab_cont.pack_propagate(0)
         return tab_cont
 
     def reorder(self): # for in app swap
         self.reorder_btn_state = not self.reorder_btn_state
         if self.reorder_btn_state:
-            # print("starting reorder")
-            self.unit_h = self.tabs[0].winfo_height()
-            for tab in self.tabs:
-                tab.bind("<Enter>"   , lambda e, t=tab: t.configure(fg_color=(LIGHT_MODE["primary"], DARK_MODE["primary"])))
-                tab.bind("<Leave>"   , lambda e, t=tab: t.configure(fg_color="transparent"))
-                tab.bind("<B1-Motion>", lambda e, t=tab: self._on_motion(e, t))    # perfect
+            self.unit_h = self.slots[0].winfo_height()/Chest.scaleFactor
+            for n, slot in enumerate(self.slots):
+                button = slot.winfo_children()[0]
+                tab = self.tabs[n]
+                button.pack(before=tab, side = "left", padx=(0, 20), pady=(0, self.whiteLine_pady*2), fill="y")
+                button.bind("<Enter>"   , lambda e, t=tab: t.configure(fg_color=(LIGHT_MODE["primary"], DARK_MODE["primary"])))
+                button.bind("<Leave>"   , lambda e, t=tab: t.configure(fg_color="transparent"))
+                button.bind("<B1-Motion>", lambda e, t=tab, b=button: self._on_motion(e, t, b))    # perfect
+                button.bind("<ButtonRelease-1>", lambda e, Tc=slot, b=button: self._on_release(e, Tc, b))
         else:
-            # print("closing reorder")
-            for tab in self.tabs:
-                tab.unbind("<Enter>")
-                tab.unbind("<Leave>")
-                tab.unbind("<B1-Motion>")
+            for slot in self.slots:
+                button = slot.winfo_children()[0]
+                button.pack_forget()
+                button.unbind("<Enter>")
+                button.unbind("<Leave>")
+                button.unbind("<B1-Motion>")
+                button.unbind("<ButtonRelease-1>")
 
-    def _on_motion(self, event, tab):
-        target_step = event.y/self.unit_h
-        if target_step < 0:
-            target_step -= 1
-        target_step = int(target_step)
-        # print(f"event: {event.y}, step: {target_step}")
-        if self.swapping == 0 and (target_step >= 1 or target_step <= -1):
+    def _on_motion(self, event, tab, btn):
+        if self.swapping == 0:
+            scaled_y_event = event.y/Chest.scaleFactor
+            if self.tab_index == None:
+                btn.configure(text="")
+                self.tab_index = self.tabs.index(tab)
+                self.event_y_offset = scaled_y_event
+                tab.lift()
+            y = (self.tab_index*self.unit_h)+(scaled_y_event-self.event_y_offset)
+            tab.place(x=0, y=y, relwidth=1, anchor="nw")
+            # print(f"event: {scaled_y_event}, y: {y}")
+
+    def _on_release(self, event, Tab, btn):
+        if self.tab_index != None:
             self.swapping = 1
-            self.swap(tab, target_step)
+            scaled_y_event = event.y/Chest.scaleFactor
+            
+            up_target = (scaled_y_event+self.whiteLine_pady+2 -self.event_y_offset)/self.unit_h   # up
+            if up_target < 0:
+                up_target = up_target - 1
+            down_target = (scaled_y_event+self.whiteLine_pady+2 +((self.tabs[0].winfo_height()/Chest.scaleFactor)-self.event_y_offset))/self.unit_h   # down
+            if down_target < 0:
+                down_target = down_target - 1
+
+            if abs(up_target) < abs(down_target):   # can be improved so that it chooses which ever is further in
+                target = int(down_target)
+            else:
+                target = int(up_target)
+            
+            # print(f"released: {scaled_y_event}, target step: {target}, offset: {self.event_y_offset}")
+            self.swap(Tab, target)
+            btn.configure(text="⥮")
+            self.tab_index = None
+            self.event_y_offset = None
             self.swapping = 0
 
-    def swap(self, tab, step):  # for code swap
-        current_pos = self.tabs.index(tab)
+    def swap(self, Tab, step):  # for code swap
+        current_pos = self.slots.index(Tab)
         target_pos = current_pos + step
-        tabs_count = len(self.tabs)
+        tabs_count = len(self.slots)
         
         if target_pos >= 0 and target_pos < tabs_count:
             self.tabs.insert(target_pos, self.tabs.pop(current_pos))
+            self.slots.insert(target_pos, self.slots.pop(current_pos))
 
             if target_pos+1 < tabs_count:
-                self.tabs[target_pos].pack(before=self.tabs[target_pos+1], expand=True, fill="both")
+                self.slots[target_pos].pack(before=self.slots[target_pos+1], expand=True, fill="both")
             elif target_pos+1 == tabs_count:
-                self.tabs[target_pos].pack(after=self.tabs[target_pos-1], expand=True, fill="both")
+                self.slots[target_pos].pack(after=self.slots[target_pos-1], expand=True, fill="both")
+            self.tabs[target_pos].pack(in_=self.slots[target_pos], after=self.slots[target_pos].winfo_children()[0], expand=True, fill="x")
             
-            self.update()   # update so that if the bind is still holding an old value it lets it out, so that it doesn't cause a swap after the <self.swapping> lock has been unlocked
+        else:
+            self.tabs[current_pos].pack(in_=self.slots[current_pos], after=self.slots[current_pos].winfo_children()[0], expand=True, fill="x")
+        
+        self.update()   # update so that if the bind is still holding an old value it lets it out, so that it doesn't cause a swap after the <self.swapping> lock has been unlocked
+
+    def _on_start(self):
+        for slot in self.slots:
+            slot.configure(height=slot.winfo_height()/Chest.scaleFactor)
+            slot.pack_propagate(0)
+        self.started = True
 
     def _on_update(self):
         for tab in self.tabs:
@@ -327,7 +386,8 @@ class small_tabs(ctk.CTkFrame):     #^ Currently working on this
             label.configure(wraplength = 3*label.winfo_width()/4)
 
     def page_function_calls(self):
-        self.page.updating_call_list.append(self._on_update)
+        self.page.starting_call_list.append(self._on_start)
+        # self.page.updating_call_list.append(self._on_update)
 
 class large_tabs(ctk.CTkFrame):
     def __init__(self, page_class, parent, img_width=500, img_height=300, padx=10, pady=10, autofit=True):
