@@ -217,7 +217,7 @@ class C_Widgits():
             widget.insert(0, placeHolder)
             widget.configure(text_color = color)
     
-class small_tabs(ctk.CTkFrame):     #^ Currently working on this
+class small_tabs(ctk.CTkFrame):
     def __init__(self, page_class: Page_BM, parent, img_width=300, img_height=180, padx=20, pady=(0, 10)):
         super().__init__(parent, fg_color="transparent")
         self.page = page_class
@@ -243,7 +243,7 @@ class small_tabs(ctk.CTkFrame):     #^ Currently working on this
         self.pack(expand=True, fill="x", padx=padx, pady=pady)
         self.page_function_calls()
         
-    def tab(self, text, image, button_icon=None, button_command=None, icon_size=(25, 25)):  #! current problem is with text wrapping
+    def tab(self, text, image, button_icon=None, button_command=None, icon_size=(25, 25)):
         if self.reorder_btn_state:
             self.reorder()  # closes the reorder action if it is active
 
@@ -273,7 +273,7 @@ class small_tabs(ctk.CTkFrame):     #^ Currently working on this
         canvas.create_image(self.image_width/2, self.image_height/2, anchor="center", image=im_ctk)
 
         tab_title = ctk.CTkLabel(st_frame, fg_color="transparent", text=f"{text}", font=(FONT, 20), anchor="w", justify="left")
-        tab_title.pack(padx=20, side="left")
+        tab_title.pack(padx=20, side="left", fill="x", expand=True)
 
         if button_icon: #^ make it so that it can be a directory(str), actual_image(Image.Image), custom_image(tuple), or None
             button_image = change_pixel_color(button_icon, color=f'{ICONS["_l"]}+{ICONS["_d"]}', return_img=True)
@@ -283,11 +283,12 @@ class small_tabs(ctk.CTkFrame):     #^ Currently working on this
 
         st_frame.pack(in_=tab_cont, expand=True, fill="x")
         tab_cont.pack(expand=True, fill="x")
-        # tab_title.update()
-        # tab_title.configure(wraplength = 3*tab_title.winfo_width()/4)
 
         White_line = ctk.CTkFrame(tab_cont, fg_color=(DARK_MODE["background"], LIGHT_MODE["background"]), height=2)
         White_line.pack(fill="x", side="bottom", pady=self.whiteLine_pady)
+
+        tab_title.configure(wraplength = tab_title.winfo_width()/Chest.scaleFactor)
+        tab_title.bind('<Configure>', lambda e: tab_title.configure(wraplength = tab_title.winfo_width()/Chest.scaleFactor))
 
         self.tabs.append(st_frame)
         self.slots.append(tab_cont)
@@ -307,7 +308,7 @@ class small_tabs(ctk.CTkFrame):     #^ Currently working on this
                 button.pack(before=tab, side = "left", padx=(0, 20), pady=(0, self.whiteLine_pady*2), fill="y")
                 button.bind("<Enter>"   , lambda e, t=tab: t.configure(fg_color=(LIGHT_MODE["primary"], DARK_MODE["primary"])))
                 button.bind("<Leave>"   , lambda e, t=tab: t.configure(fg_color="transparent"))
-                button.bind("<B1-Motion>", lambda e, t=tab, b=button: self._on_motion(e, t, b))    # perfect
+                button.bind("<B1-Motion>", lambda e, t=tab, b=button: self._on_motion(e, t, b))
                 button.bind("<ButtonRelease-1>", lambda e, Tc=slot, b=button: self._on_release(e, Tc, b))
         else:
             for slot in self.slots:
@@ -380,14 +381,8 @@ class small_tabs(ctk.CTkFrame):     #^ Currently working on this
             slot.pack_propagate(0)
         self.started = True
 
-    def _on_update(self):
-        for tab in self.tabs:
-            label = tab.winfo_children()[1]
-            label.configure(wraplength = 3*label.winfo_width()/4)
-
     def page_function_calls(self):
         self.page.starting_call_list.append(self._on_start)
-        # self.page.updating_call_list.append(self._on_update)
 
 class large_tabs(ctk.CTkFrame):
     def __init__(self, page_class, parent, img_width=500, img_height=300, padx=10, pady=10, autofit=True):
