@@ -18,19 +18,21 @@ class C_Widgits():
                 fg_color:   Union[tuple, str] = "transparent", 
                 font:       Union[tuple, ctk.CTkFont] = (FONT_B, 25), 
                 text_color: Union[str, Tuple[str, str]] = (LIGHT_MODE["text"], DARK_MODE["text"]),
-                padx: Union[int, Tuple[int, int]] = 0, 
-                pady: Union[int, Tuple[int, int]] = 10):
+                padx: Union[int, Tuple[int, int]] = 30, 
+                pady: Union[int, Tuple[int, int]] = (20, 0), 
+                inner_padx: Union[int, Tuple[int, int]] = 40,
+                inner_pady: Union[int, Tuple[int, int]] = (20, 0)):
         
         section_frame = ctk.CTkFrame(self.parent, fg_color= fg_color)
 
         if title != None:
             title_frame = ctk.CTkFrame(section_frame, fg_color= "transparent")  # contains the label and the button (if it exists).
             section_label = ctk.CTkLabel(title_frame, text=f"{title}", font=font, fg_color="transparent", text_color=text_color, anchor="w")
-            section_label.pack(side="left", fill="x", padx=20)
+            section_label.pack(side="left", fill="x", padx=0)#20)
             title_frame.pack(fill="x")
 
         ops_frame = ctk.CTkFrame(section_frame, fg_color= "transparent")
-        ops_frame.pack(fill="x", padx=20, pady=10)
+        ops_frame.pack(fill="x", padx=inner_padx, pady=inner_pady)
 
         section_frame.pack(fill="x", padx=padx, pady=pady)
 
@@ -62,7 +64,7 @@ class C_Widgits():
                                            fg_color=fg_color, hover_color=color_finder(section.master) if fg_color == "transparent" else hover_color, 
                                            image=button_icon, width=s[0], height=s[1], 
                                            command=button_command)
-            section_button.pack(side="right", fill="x", padx=20)
+            section_button.pack(side="right", fill="x", padx=0)#20)
 
             return section_button
     
@@ -73,9 +75,9 @@ class C_Widgits():
         unit_frame = ctk.CTkFrame(section, fg_color= "transparent")
 
         unit_label = ctk.CTkLabel(unit_frame, text=f"{title}", font=(FONT, 20))
-        unit_label.pack(side="left", fill="x", padx=20, pady=10)
+        unit_label.pack(side="left", fill="x")
 
-        unit_frame.pack(fill="x")
+        unit_frame.pack(fill="x", pady=(0, 20))
         
         return unit_frame
     
@@ -108,7 +110,7 @@ class C_Widgits():
             hover_color = (hvr_clr_g(fg_color[0], "l"), hvr_clr_g(fg_color[1], "d"))
             
         unit_option = ctk.CTkButton(master = master, text = text, font = font, text_color = text_color, width = width, height = height, fg_color = fg_color, hover_color = hover_color, border_width = border_width, border_color = border_color, command = command)
-        unit_option.pack(side="right", fill="x", padx=20, pady=10)
+        unit_option.pack(side="right", fill="x")
 
         if invert:  #? Careful that fg_color is now stored in the text_color var, and fg_color is actually "transparent". 
             textclr_onEntry = (LIGHT_MODE["text"], DARK_MODE["text"]) if text_color != (LIGHT_MODE["text"], DARK_MODE["text"]) else (DARK_MODE["text"], LIGHT_MODE["text"])
@@ -140,7 +142,7 @@ class C_Widgits():
                                       dropdown_fg_color=fg_color, dropdown_font=font, dropdown_text_color = (LIGHT_MODE["text"], DARK_MODE["text"]),  
                                       state = "readonly", values = values, variable = variable, command = command)
         # unit_option.set(f"{default}") if default is not None else None
-        unit_option.pack(side="right", fill="x", padx=20, pady=10)
+        unit_option.pack(side="right", fill="x")
 
         return unit_option, variable
     
@@ -154,7 +156,7 @@ class C_Widgits():
                       border_color: Optional[Union[str, Tuple[str, str]]] = None,
                       checkmark_color: Optional[Union[str, Tuple[str, str]]] = None,
 
-                      width: int = 100,
+                      width: int = 82,  #? (typical_unit_width/2)+(checkbox_width/2) >> 140/2 + 24/2
                       height: int = 24,
                       checkbox_width: int = 24,
                       checkbox_height: int = 24,
@@ -172,7 +174,7 @@ class C_Widgits():
                                       command=command, variable=variable, onvalue=True, offvalue=False,)
         # if default != None:
         #     unit_option.configure(variable=default) 
-        unit_option.pack(side="right", fill="x", pady=10)
+        unit_option.pack(side="right", fill="x")
 
         return unit_option, variable
     
@@ -195,7 +197,7 @@ class C_Widgits():
         text_color = (LIGHT_MODE["text"], DARK_MODE["text"])
         textvariable = ctk.StringVar(value=placeholder_text) if textvariable is None else textvariable
         unit_option = ctk.CTkEntry(master, font=font, fg_color=fg_color, text_color=text_color, width=width, height=height, textvariable=textvariable)
-        unit_option.pack(side="right", fill="x", padx=20, pady=10)
+        unit_option.pack(side="right", fill="x")
 
         if placeholder_text is not None:
             plchldrClr = (LIGHT_MODE["primary"], DARK_MODE["primary"])
@@ -218,7 +220,7 @@ class C_Widgits():
             widget.configure(text_color = color)
     
 class small_tabs(ctk.CTkFrame):
-    def __init__(self, page_class: Page_BM, parent, img_width=300, img_height=180, padx=20, pady=(0, 10)):
+    def __init__(self, page_class: Page_BM, parent, img_width=300, img_height=180, padx=0, pady=(0, 0)):
         super().__init__(parent, fg_color="transparent")
         self.page = page_class
         self.parent = parent
@@ -385,7 +387,7 @@ class small_tabs(ctk.CTkFrame):
         self.page.starting_call_list.append(self._on_start)
 
 class large_tabs(ctk.CTkFrame):
-    def __init__(self, page_class, parent, img_width=500, img_height=300, padx=10, pady=10, autofit=True):
+    def __init__(self, page_class, parent, img_width=500, img_height=300, padx=0, pady=(0, 0), autofit=True):
         super().__init__(parent, fg_color="transparent")
         self.page = page_class
         self.parent = parent
