@@ -22,7 +22,7 @@ class Settings(Page_BM):
         self.test_num = 0
 
         self.settings_label = ctk.CTkLabel(self.frame, text="Settings", font=(FONT_B, 40))
-        self.settings_label.pack(fill="x", padx=20, pady=20)
+        self.settings_label.pack(fill="x", padx=20, pady=(20, 0))
 
         self.appearance_sec = self.c_wdgts.section("Appearance")
         self.theme_op, themeVar = self.c_wdgts.ComboBox_unit(self.appearance_sec, "Theme", ["System", "Light", "Dark"], Chest.Get_Prefered_Theme().capitalize(), Chest.Set_Prefered_Theme)  #? combobox sends an argument with the chosen value

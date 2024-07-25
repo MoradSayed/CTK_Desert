@@ -24,7 +24,7 @@ class Workspace(Page_BM):
         self.cwdgs = C_Widgits(self, self.frame)
 
         self.workspace_label = ctk.CTkLabel(self.frame, text="Workspace", font=(FONT_B, 40))
-        self.workspace_label.pack(fill="x", padx=20, pady=20)
+        self.workspace_label.pack(fill="x", padx=20, pady=(20, 0))
 
         # Section 1
         self.sectionframe = self.cwdgs.section("Pages")
