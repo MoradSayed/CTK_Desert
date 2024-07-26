@@ -22,6 +22,7 @@ class Frame(ctk.CTkFrame):
         self.original_icons_dir = f"{self.current_dir}\\images\\Icons\\"
         self.user_icons_dir = os.path.join(usr_assets_dir, "Images\\")
         self.window = parent
+        self.update_cover = ctk.CTkFrame(parent, fg_color="transparent")
 
         self.menu_relwidth = 0.05
         self.menu_relx = 0
@@ -139,6 +140,8 @@ class Frame(ctk.CTkFrame):
             if not self.updating:    
                 # print("detected")
                 self.updating = True
+                self.update_cover.lift()
+                self.update_cover.place(x=0, y=0, relwidth=1, relheight=1) 
                 self.pack_forget()
                 self.check_click_state()
 
@@ -149,6 +152,7 @@ class Frame(ctk.CTkFrame):
             # print("packing and updating")
             self.pack(expand = True, fill = "both")
             self.update_sizes()
+            self.update_cover.place_forget()
             self.updating = False
 
     def update_sizes(self): 
