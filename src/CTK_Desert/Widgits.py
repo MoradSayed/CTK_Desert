@@ -5,8 +5,8 @@ from .Core import userChest as Chest
 from .Page_base_model import Page_BM
 from .Theme import *
 from .utils import hvr_clr_g, change_pixel_color, color_finder
-import textwrap
 from typing import Union, Tuple, Callable, Optional, Any, List
+from methodtools import lru_cache
 
 class C_Widgits():
     def __init__(self, page_class, parent):
@@ -622,91 +622,134 @@ class large_tabs(ctk.CTkFrame):
     def page_function_calls(self):
         self.page.updating_call_list.append(self.ltabs_update)
 
-class Banner(ctk.CTkFrame): #! change the image resizing stuff (_, 642) | 0.4*window_height
-    def __init__(self, page, parent, overlay_color, image_path=None, banner_title="", banner_content=None, button_text="Click", font=(FONT_B, 25), font2=(FONT, 15), button_command=None, button_colors=(LIGHT_MODE["accent"], DARK_MODE["accent"]), shifter=0, overlay=0.5): 
-        #shifter and overlay are values between 0 and 1
+class Banner(ctk.CTkFrame):
+    def __init__(self, 
+                 page: Page_BM, 
+                 parent: ctk.CTkFrame, 
+                 overlay_color: str, 
+                 image: Union[str, Image.Image], 
+                 banner_title: str = "", 
+                 banner_content: Optional[str] = None, 
+                 button_text: str = "Click", 
+                 button_command: Callable = lambda: None, 
+                 shifter: int = 0.7,  #? shifter is a value between -1 and 1
+                 overlay: int = 0.55, #? overlay is a value between 0 and 1
+                 font: Union[Tuple[str, int], ctk.CTkFont] = (FONT_B, 25), 
+                 font2: Union[Tuple[str, int], ctk.CTkFont] = (FONT, 15), 
+                 button_colors: Tuple[str, str] = (LIGHT_MODE["accent"], DARK_MODE["accent"]), 
+                 ): 
         super().__init__(parent, fg_color="transparent")
-        if overlay_color == "transparent":
-            raise ValueError("Banner color can't be transparent, provide a color value.")
-        
+        self.pack(fill="both")
+
         self.page = page
         self.parent_frame = parent
-        self.canvas_color = overlay_color
-
-        self.pack(fill="both")
-        self.im = Image.open(r"C:\Users\Morad\Desktop\Page_layout_library\Assets\Images\val.png") if image_path is None else Image.open(image_path)
-        self.im = self.im.convert("RGBA")
-        img_data = np.array(self.im)
-        width, _ = self.im.size
-        alpha_gradient = np.linspace(30, 255, int(width*overlay), dtype=np.uint8)  # Create a gradient from 255 to 0
-        img_data[:, :int(width*overlay), 3] = alpha_gradient  # Assign the gradient to the alpha channel
-        self.new_img = Image.fromarray(img_data)
-        self.im_tk  = ImageTk.PhotoImage(self.new_img)
-
-        self.banner_ttitle = banner_title
-        self.banner_content = banner_content
-        self.button_text = button_text
-        self.font = font
-        self.font2 = font2
         self.shifter = shifter
         
-        self.padding = self.font[1]
-        self.multi = 1.5
+        if overlay_color == "transparent":
+            raise ValueError("Banner color can't be transparent, provide a color value.")
 
-        self.canvas = ctk.CTkCanvas(self, bg=self.canvas_color, bd=0, highlightthickness=0, relief='ridge')
-        self.canvas.pack()
+        if isinstance(image, str):
+            ori_img = Image.open(image)
+        elif isinstance(image, Image.Image):
+            ori_img = image
+        else:
+            raise TypeError("image should be a path to an image or an Image object.")
+        
+        width, height = ori_img.size
+        self.ratio = width/height
+        self.image_calc_height = int(Chest.Window.winfo_vrootheight()*0.4)
+        self.image_calc_width  = int(self.image_calc_height*self.ratio)
 
-        self.action_button = ctk.CTkButton(self, text=self.button_text, command=button_command, fg_color=button_colors, hover_color=(hvr_clr_g(button_colors[0], "l"), hvr_clr_g(button_colors[1], "d")), font=(font[0], font[1]*0.75), corner_radius=0)
+        ori_img = ori_img.convert("RGBA")
+        img_array = np.array(ori_img)
+        alpha_gradient = np.linspace(0, 255, int(self.image_calc_width*overlay), dtype=np.uint8)  # Create a transparency gradient from 0 to 255
+        img_array[:, :int(self.image_calc_width*overlay), 3] = alpha_gradient  # Assign the gradient to the alpha channel
+        self.new_img = Image.fromarray(img_array)
+        self.im_tk  = self.resize_image(self.image_calc_width, self.image_calc_height)
+        
+        self.padding = (font2[1]*1.25)/Chest.scaleFactor
+        self.multi = 1
+        secret_work_x = -2560        # 2560 just acts as a large num (out of view)
+
+        self.canvas = ctk.CTkCanvas(self, bg=overlay_color, bd=0, highlightthickness=0, relief='ridge', height=self.image_calc_height)
+        self.canvas.pack(fill="x")
+        self.canvas.create_image(secret_work_x, self.image_calc_height/2, anchor="e", tags="banner_image", image=self.im_tk, )
+
+        action_button = ctk.CTkButton(self, text=button_text, font=(font[0], font2[1]), corner_radius=0, command=button_command,
+                                           fg_color    = (hvr_clr_g(overlay_color, "l", 40)  , hvr_clr_g(overlay_color, "d", 40)), 
+                                           hover_color = (hvr_clr_g(overlay_color, "l", 60)  , hvr_clr_g(overlay_color, "d", 60)), )    #! color should be determined by the lightness of the overlay color
+                                                                                                                                        #! and the color should be independent of the mode (light or dark)
+
+        self.last_y_pos = []
+        self.update()   # makes things work!!
+        
+        b_titletext = self.canvas.create_text (secret_work_x, 0, anchor="nw", tags="banner_text" , text=banner_title, font=font, fill="white")
+        self.last_y_pos.append(self.canvas.bbox(b_titletext)[3])
+
+        if banner_content is not None:                                                                                                                                #! 454 is temp, it needs to be a var
+            b_content = self.canvas.create_text (secret_work_x, self.last_y_pos[-1]+self.padding, anchor="nw", tags="banner_content" , text=banner_content, font=font2, fill="white", width=454)
+            self.last_y_pos.append(self.canvas.bbox(b_content)[3])
+            self.multi = 2
+            self.content : bool = True
+        else:
+            self.content : bool = False
+
+        b_btn = self.canvas.create_window (secret_work_x, self.last_y_pos[-1]+(self.multi*self.padding), anchor="nw", tags="acbtn", window=action_button)
+        self.last_y_pos.append(self.canvas.bbox(b_btn)[3])
 
         self.page_function_calls()
         
-    def init(self):
-        self.update_widget()
+    @lru_cache(maxsize=5)   #! careful may not release the class instance from memory (https://stackoverflow.com/questions/33672412/python-functools-lru-cache-with-instance-methods-release-object)
+    def resize_image(self, width: int, height: int) -> Image.Image:
+        resized_img = self.new_img.copy().resize((width, height))
+        result = ImageTk.PhotoImage(resized_img)
+        return result
 
-    def update_widget(self):
-        self.frame_width = self.parent_frame.winfo_width()
-        if self.frame_width == 1:
-            raise ValueError("Parent width is 1, if you're using this widget in a page, make sure it's called when the page is opened.")
-        if self.frame_width != self.im_tk.width():
-            self.r = self.im.size[0]/self.im.size[1] # aspect ratio = width/height
-            self.s = (self.frame_width, int(self.frame_width/self.r))
-            self.im_tk  = ImageTk.PhotoImage(self.new_img.resize(self.s))
+    def on_start(self):
+        self.canvas_width = self.canvas.winfo_width()
+        self.canvas_height = self.canvas.winfo_height()
+        starting_x_pos = self.canvas_width*(1/4)*(1/4)
 
-            try:
-                self.canvas.delete("banner_image")
-                self.canvas.delete("banner_text")
-                self.canvas.delete("banner_content")
-            except:
-                pass
-            self.canvas.config(width=self.s[0], height=self.s[1])
-            b_image = self.canvas.create_image(0, 0, anchor="nw", tags="banner_image", image=self.im_tk, )
+        self.canvas.coords("banner_image", self.canvas_width, self.canvas_height/2)
 
-            #TODO//: wrap all these widgets to a location manager
-            #TODO//: use text wrap for dynamic resizing of the banner content
-            #TODO: change font size dynamically
-            b_titletext = self.canvas.create_text ((self.s[0]*(1/4)*(1/4)), 0, anchor="nw", tags="banner_text" , text=self.banner_ttitle, font=self.font, fill="white")
-            bbox_title = self.canvas.bbox(b_titletext)
+        starting_y_pos = (self.canvas_height-self.last_y_pos[-1])/2 + (self.shifter*((self.canvas_height-self.last_y_pos[-1])/2))
+        self.canvas.moveto("banner_text", starting_x_pos, starting_y_pos)
+        if self.content:
+            self.canvas.moveto("banner_content", starting_x_pos, starting_y_pos + self.last_y_pos[0] + self.padding)
+            self.canvas.itemconfigure("banner_content", width=(self.canvas_width/3)-(starting_x_pos))
+            self.canvas.moveto("acbtn"         , starting_x_pos, starting_y_pos + self.last_y_pos[1] + (self.multi*self.padding))
+        else:
+            self.canvas.moveto("acbtn"         , starting_x_pos, starting_y_pos + self.last_y_pos[0] + (self.multi*self.padding))
+    
+    def on_update(self):
+        self.canvas_width = self.canvas.winfo_width()
+        self.canvas_height = self.canvas.winfo_height()
 
-            if self.banner_content is not None:
-                self.numOfChars = 40
-                self.banner_content = textwrap.fill(self.banner_content, width=(self.numOfChars/697)*(self.s[0]//2)) # 40 characters per line, 697 is the width available for the text 
-                b_content = self.canvas.create_text ((self.s[0]*(1/4)*(1/4)), bbox_title[3]+self.padding, anchor="nw", tags="banner_content" , text=self.banner_content, font=self.font2, fill="white")
-                bbox_content = self.canvas.bbox(b_content)
-                self.multi = 2
-            else:
-                bbox_content = bbox_title
+        calc_width  = int(2*self.canvas_width/3)
+        calc_height = int(calc_width/self.ratio)
+        if calc_height > self.canvas_height:
+            self.image_calc_width  = calc_width
+            self.image_calc_height = calc_height
+            
+            self.im_tk = self.resize_image(self.image_calc_width, self.image_calc_height)
+            self.canvas.itemconfigure("banner_image", image=self.im_tk)
+        else:
+            self.image_calc_height = int(self.canvas_height)
+            self.image_calc_width  = int(self.image_calc_height*self.ratio)
+            
+            self.im_tk = self.resize_image(self.image_calc_width, self.image_calc_height)
+            self.canvas.itemconfigure("banner_image", image=self.im_tk)
 
-            b_btn = self.canvas.create_window ((self.s[0]*(1/4)*(1/4)), bbox_content[3]+(self.multi*self.padding), anchor="nw", tags="acbtn", window=self.action_button)
-            bbox_btn = self.canvas.bbox(b_btn)
+        self.canvas.coords("banner_image", self.canvas_width, self.canvas_height/2)
 
-            length = bbox_btn[3]
-            start_y_pos = (self.s[1]-length)/2 + (self.shifter*((self.s[1]-length)/2))
-            self.canvas.moveto(b_titletext, (self.s[0]*(1/4)*(1/4)), start_y_pos)
-            if self.banner_content is not None:
-                self.canvas.moveto(b_content  , (self.s[0]*(1/4)*(1/4)), start_y_pos + bbox_title[3]+self.padding)
-            self.canvas.moveto(b_btn      , (self.s[0]*(1/4)*(1/4)), start_y_pos + bbox_content[3]+(self.multi*self.padding))
+        if self.content:
+            self.canvas.itemconfigure("banner_content", width=(self.canvas_width/3)-(self.canvas_width*(1/4)*(1/4)))
 
     def page_function_calls(self):
-        self.page.starting_call_list.append(self.init)
-        self.page.updating_call_list.append(self.update_widget)
+        self.page.starting_call_list.append(self.on_start)
+        self.page.updating_call_list.append(self.on_update)
+
+    #! Current probelms:
+    #//  1. when scaling down the image (reducing the width of the window) the if condition is not correct yet.
+    #*  2. the text wrap isn't ready yet (doesn't allow for the increase of decrease of the num of lines). 
 
