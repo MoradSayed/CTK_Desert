@@ -644,6 +644,7 @@ class Banner(ctk.CTkFrame):
         self.page = page
         self.parent_frame = parent
         self.shifter = shifter
+        self.content : bool = False
         
         if overlay_color == "transparent":
             raise ValueError("Banner color can't be transparent, provide a color value.")
@@ -668,34 +669,29 @@ class Banner(ctk.CTkFrame):
         self.im_tk  = self.resize_image(self.image_calc_width, self.image_calc_height)
         
         self.padding = (font2[1]*1.25)/Chest.scaleFactor
-        self.multi = 1
+        self.multi = 2
         secret_work_x = -2560        # 2560 just acts as a large num (out of view)
 
         self.canvas = ctk.CTkCanvas(self, bg=overlay_color, bd=0, highlightthickness=0, relief='ridge', height=self.image_calc_height)
         self.canvas.pack(fill="x")
         self.canvas.create_image(secret_work_x, self.image_calc_height/2, anchor="e", tags="banner_image", image=self.im_tk, )
 
-        action_button = ctk.CTkButton(self, text=button_text, font=(font[0], font2[1]), corner_radius=0, command=button_command,
-                                           fg_color    = (hvr_clr_g(overlay_color, "l", 40)  , hvr_clr_g(overlay_color, "d", 40)), 
-                                           hover_color = (hvr_clr_g(overlay_color, "l", 60)  , hvr_clr_g(overlay_color, "d", 60)), )    #! color should be determined by the lightness of the overlay color
-                                                                                                                                        #! and the color should be independent of the mode (light or dark)
-
-        self.last_y_pos = []
-        self.update()   # makes things work!!
+        self.widgets_heights = []   #? Title, Content, Button
+        self.total_height = 0
         
-        b_titletext = self.canvas.create_text (secret_work_x, 0, anchor="nw", tags="banner_text" , text=banner_title, font=font, fill="white")
-        self.last_y_pos.append(self.canvas.bbox(b_titletext)[3])
+        self.canvas.create_text (secret_work_x, 0, anchor="nw", tags="banner_text" , text=banner_title, font=font, fill="white")
+        self.widgets_heights.append(self.canvas.bbox("banner_text")[3] + self.padding)
 
-        if banner_content is not None:                                                                                                                                #! 454 is temp, it needs to be a var
-            b_content = self.canvas.create_text (secret_work_x, self.last_y_pos[-1]+self.padding, anchor="nw", tags="banner_content" , text=banner_content, font=font2, fill="white", width=454)
-            self.last_y_pos.append(self.canvas.bbox(b_content)[3])
-            self.multi = 2
-            self.content : bool = True
-        else:
-            self.content : bool = False
+        if banner_content is not None:
+            self.canvas.create_text (secret_work_x, 0, anchor="nw", tags="banner_content" , text=banner_content, font=font2, fill="white")
+            self.widgets_heights.append(0)
+            self.content = True
 
-        b_btn = self.canvas.create_window (secret_work_x, self.last_y_pos[-1]+(self.multi*self.padding), anchor="nw", tags="acbtn", window=action_button)
-        self.last_y_pos.append(self.canvas.bbox(b_btn)[3])
+        action_button = ctk.CTkButton(self, text=button_text, font=(font[0], font2[1]), corner_radius=0, command=button_command,
+                                           fg_color    = (hvr_clr_g(overlay_color, "l", 40)  , hvr_clr_g(overlay_color, "d", 40)),      #! color should be determined by the lightness of the overlay color
+                                           hover_color = (hvr_clr_g(overlay_color, "l", 60)  , hvr_clr_g(overlay_color, "d", 60)), )    #! and the color should be independent of the mode (light or dark)
+        self.canvas.create_window (secret_work_x, 0, anchor="nw", tags="action_button", window=action_button)
+        self.widgets_heights.append(self.canvas.bbox("action_button")[3])
 
         self.page_function_calls()
         
@@ -712,14 +708,18 @@ class Banner(ctk.CTkFrame):
 
         self.canvas.coords("banner_image", self.canvas_width, self.canvas_height/2)
 
-        starting_y_pos = (self.canvas_height-self.last_y_pos[-1])/2 + (self.shifter*((self.canvas_height-self.last_y_pos[-1])/2))
+        if self.content:
+            self.canvas.itemconfigure("banner_content", width=(self.canvas_width/3)-(starting_x_pos))
+            self.widgets_heights[1] = self.canvas.bbox("banner_content")[3] + (self.multi*self.padding)
+        self.total_height = sum(self.widgets_heights)
+        
+        starting_y_pos = (self.canvas_height-self.total_height)/2 + (self.shifter*((self.canvas_height-self.total_height)/2))
         self.canvas.moveto("banner_text", starting_x_pos, starting_y_pos)
         if self.content:
-            self.canvas.moveto("banner_content", starting_x_pos, starting_y_pos + self.last_y_pos[0] + self.padding)
-            self.canvas.itemconfigure("banner_content", width=(self.canvas_width/3)-(starting_x_pos))
-            self.canvas.moveto("acbtn"         , starting_x_pos, starting_y_pos + self.last_y_pos[1] + (self.multi*self.padding))
+            self.canvas.moveto("banner_content", starting_x_pos, starting_y_pos + self.widgets_heights[0])
+            self.canvas.moveto("action_button" , starting_x_pos, starting_y_pos + self.widgets_heights[0] + self.widgets_heights[1])
         else:
-            self.canvas.moveto("acbtn"         , starting_x_pos, starting_y_pos + self.last_y_pos[0] + (self.multi*self.padding))
+            self.canvas.moveto("action_button" , starting_x_pos, starting_y_pos + self.widgets_heights[0])
     
     def on_update(self):
         self.canvas_width = self.canvas.winfo_width()
@@ -730,20 +730,28 @@ class Banner(ctk.CTkFrame):
         if calc_height > self.canvas_height:
             self.image_calc_width  = calc_width
             self.image_calc_height = calc_height
-            
             self.im_tk = self.resize_image(self.image_calc_width, self.image_calc_height)
             self.canvas.itemconfigure("banner_image", image=self.im_tk)
         else:
             self.image_calc_height = int(self.canvas_height)
             self.image_calc_width  = int(self.image_calc_height*self.ratio)
-            
             self.im_tk = self.resize_image(self.image_calc_width, self.image_calc_height)
             self.canvas.itemconfigure("banner_image", image=self.im_tk)
-
         self.canvas.coords("banner_image", self.canvas_width, self.canvas_height/2)
 
         if self.content:
+            y_before = self.canvas.bbox("banner_content")[3]
             self.canvas.itemconfigure("banner_content", width=(self.canvas_width/3)-(self.canvas_width*(1/4)*(1/4)))
+            y_after  = self.canvas.bbox("banner_content")[3]
+            if y_after != y_before:
+                #? Make the whole collection move to maintain the shifter position... (this is the easy way. I believe it can be optimized)
+                content_bbox = self.canvas.bbox("banner_content")
+                self.widgets_heights[1] = (content_bbox[3]-content_bbox[1]) + (self.multi*self.padding)
+                self.total_height = sum(self.widgets_heights)
+                starting_y_pos = (self.canvas_height-self.total_height)/2 + (self.shifter*((self.canvas_height-self.total_height)/2))
+                self.canvas.moveto("banner_text"   , "", starting_y_pos)
+                self.canvas.moveto("banner_content", "", starting_y_pos + self.widgets_heights[0])
+                self.canvas.moveto("action_button" , "", starting_y_pos + self.widgets_heights[0] + self.widgets_heights[1])
 
     def page_function_calls(self):
         self.page.starting_call_list.append(self.on_start)
@@ -751,5 +759,5 @@ class Banner(ctk.CTkFrame):
 
     #! Current probelms:
     #//  1. when scaling down the image (reducing the width of the window) the if condition is not correct yet.
-    #*  2. the text wrap isn't ready yet (doesn't allow for the increase of decrease of the num of lines). 
-
+    #//  2. the text wrap isn't ready yet (doesn't allow for the increase of decrease of the num of lines). 
+    #*   3. need to work on the color choice for the text and button (probably based on the overlay_color lightness)
