@@ -634,8 +634,8 @@ class Banner(ctk.CTkFrame):
                  button_command: Callable = lambda: None, 
                  shifter: int = 0.7,  #? shifter is a value between -1 and 1
                  overlay: int = 0.55, #? overlay is a value between 0 and 1
-                 font: Union[Tuple[str, int], ctk.CTkFont] = (FONT_B, 25), 
-                 font2: Union[Tuple[str, int], ctk.CTkFont] = (FONT, 15), 
+                 font: Union[Tuple[str, int], ctk.CTkFont] = (FONT_B, 20), 
+                 font2: Union[Tuple[str, int], ctk.CTkFont] = (FONT, 12), 
                  ): 
         super().__init__(parent, fg_color="transparent")
         self.pack(fill="both")
@@ -644,6 +644,8 @@ class Banner(ctk.CTkFrame):
         self.parent_frame = parent
         self.shifter = shifter
         self.content : bool = False
+        font = (font[0], int(font[1]*Chest.scaleFactor))
+        font2 = (font2[0], int(font2[1]*Chest.scaleFactor))
         
         if isinstance(image, str):
             ori_img = Image.open(image)
@@ -671,8 +673,8 @@ class Banner(ctk.CTkFrame):
         self.new_img = Image.fromarray(img_array)
         self.im_tk  = self.resize_image(self.image_calc_width, self.image_calc_height)
         
-        self.padding = (font2[1]*1.25)/Chest.scaleFactor
-        self.multi = 2
+        self.padding = (font2[1]/1.5)*Chest.scaleFactor
+        self.multi = 2.5
         secret_work_x = -2560        # 2560 just acts as a large num (out of view)
 
         self.canvas = ctk.CTkCanvas(self, bg=overlay_color, bd=0, highlightthickness=0, relief='ridge', height=self.image_calc_height)
@@ -727,22 +729,22 @@ class Banner(ctk.CTkFrame):
     def on_start(self):
         self.canvas_width = self.canvas.winfo_width()
         self.canvas_height = self.canvas.winfo_height()
-        starting_x_pos = self.canvas_width*(1/4)*(1/4)
+        self.starting_x_pos = 68*Chest.scaleFactor
 
         self.canvas.coords("banner_image", self.canvas_width, self.canvas_height/2)
 
         if self.content:
-            self.canvas.itemconfigure("banner_content", width=(self.canvas_width/3)-(starting_x_pos))
+            self.canvas.itemconfigure("banner_content", width=(self.canvas_width/3)-(self.starting_x_pos))
             self.widgets_heights[1] = self.canvas.bbox("banner_content")[3] + (self.multi*self.padding)
         self.total_height = sum(self.widgets_heights)
         
         starting_y_pos = (self.canvas_height-self.total_height)/2 + (self.shifter*((self.canvas_height-self.total_height)/2))
-        self.canvas.moveto("banner_text", starting_x_pos, starting_y_pos)
+        self.canvas.moveto("banner_text", self.starting_x_pos, starting_y_pos)
         if self.content:
-            self.canvas.moveto("banner_content", starting_x_pos, starting_y_pos + self.widgets_heights[0])
-            self.canvas.moveto("action_button" , starting_x_pos, starting_y_pos + self.widgets_heights[0] + self.widgets_heights[1])
+            self.canvas.moveto("banner_content", self.starting_x_pos, starting_y_pos + self.widgets_heights[0])
+            self.canvas.moveto("action_button" , self.starting_x_pos, starting_y_pos + self.widgets_heights[0] + self.widgets_heights[1])
         else:
-            self.canvas.moveto("action_button" , starting_x_pos, starting_y_pos + self.widgets_heights[0])
+            self.canvas.moveto("action_button" , self.starting_x_pos, starting_y_pos + self.widgets_heights[0])
     
     def on_update(self):
         self.canvas_width = self.canvas.winfo_width()
@@ -764,7 +766,7 @@ class Banner(ctk.CTkFrame):
 
         if self.content:
             y_before = self.canvas.bbox("banner_content")[3]
-            self.canvas.itemconfigure("banner_content", width=(self.canvas_width/3)-(self.canvas_width*(1/4)*(1/4)))
+            self.canvas.itemconfigure("banner_content", width=(self.canvas_width/3)-(self.starting_x_pos))
             y_after  = self.canvas.bbox("banner_content")[3]
             if y_after != y_before:
                 #? Make the whole collection move to maintain the shifter position... (this is the easy way. I believe it can be optimized)
@@ -785,3 +787,5 @@ class Banner(ctk.CTkFrame):
     #//  2. the text wrap isn't ready yet (doesn't allow for the increase of decrease of the num of lines). 
     #//  3. need to work on the color choice for the text and button (probably based on the overlay_color lightness)
     #*   4. Check on the image placement when (its width is so big). Maybe make it so that it is always centered, with the first 1/6 of the canvas width as the limit.
+
+# Note: canvas images and canvas text don't scale with display scale by default, so they need to be updated manually depending on the scale.
