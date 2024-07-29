@@ -7,6 +7,7 @@ from .Theme import *
 from .utils import hvr_clr_g, change_pixel_color, color_finder
 from typing import Union, Tuple, Callable, Optional, Any, List
 from methodtools import lru_cache
+from sklearn.cluster import KMeans
 
 class C_Widgits():
     def __init__(self, page_class, parent):
@@ -626,7 +627,6 @@ class Banner(ctk.CTkFrame):
     def __init__(self, 
                  page: Page_BM, 
                  parent: ctk.CTkFrame, 
-                 overlay_color: str, 
                  image: Union[str, Image.Image], 
                  banner_title: str = "", 
                  banner_content: Optional[str] = None, 
@@ -636,7 +636,6 @@ class Banner(ctk.CTkFrame):
                  overlay: int = 0.55, #? overlay is a value between 0 and 1
                  font: Union[Tuple[str, int], ctk.CTkFont] = (FONT_B, 25), 
                  font2: Union[Tuple[str, int], ctk.CTkFont] = (FONT, 15), 
-                 button_colors: Tuple[str, str] = (LIGHT_MODE["accent"], DARK_MODE["accent"]), 
                  ): 
         super().__init__(parent, fg_color="transparent")
         self.pack(fill="both")
@@ -646,15 +645,19 @@ class Banner(ctk.CTkFrame):
         self.shifter = shifter
         self.content : bool = False
         
-        if overlay_color == "transparent":
-            raise ValueError("Banner color can't be transparent, provide a color value.")
-
         if isinstance(image, str):
             ori_img = Image.open(image)
         elif isinstance(image, Image.Image):
             ori_img = image
         else:
             raise TypeError("image should be a path to an image or an Image object.")
+        overlay_color, luminance = self.get_dominant_color(ori_img)  # 0.25 secs, need to find a way to make it faster
+        if luminance > 128:
+            fill = LIGHT_MODE["text"]
+            hvr = "l" 
+        else: 
+            fill = DARK_MODE["text"]
+            hvr = "d" 
         
         width, height = ori_img.size
         self.ratio = width/height
@@ -679,22 +682,42 @@ class Banner(ctk.CTkFrame):
         self.widgets_heights = []   #? Title, Content, Button
         self.total_height = 0
         
-        self.canvas.create_text (secret_work_x, 0, anchor="nw", tags="banner_text" , text=banner_title, font=font, fill="white")
+        self.canvas.create_text (secret_work_x, 0, anchor="nw", tags="banner_text" , text=banner_title, font=font, fill=fill)
         self.widgets_heights.append(self.canvas.bbox("banner_text")[3] + self.padding)
 
         if banner_content is not None:
-            self.canvas.create_text (secret_work_x, 0, anchor="nw", tags="banner_content" , text=banner_content, font=font2, fill="white")
+            self.canvas.create_text (secret_work_x, 0, anchor="nw", tags="banner_content" , text=banner_content, font=font2, fill=fill)
             self.widgets_heights.append(0)
             self.content = True
 
-        action_button = ctk.CTkButton(self, text=button_text, font=(font[0], font2[1]), corner_radius=0, command=button_command,
-                                           fg_color    = (hvr_clr_g(overlay_color, "l", 40)  , hvr_clr_g(overlay_color, "d", 40)),      #! color should be determined by the lightness of the overlay color
-                                           hover_color = (hvr_clr_g(overlay_color, "l", 60)  , hvr_clr_g(overlay_color, "d", 60)), )    #! and the color should be independent of the mode (light or dark)
+        action_button = ctk.CTkButton(self, text=button_text, font=(font[0], font2[1]), corner_radius=0, command=button_command, text_color=fill, 
+                                      fg_color = hvr_clr_g(overlay_color, hvr, 40), hover_color = hvr_clr_g(overlay_color, hvr, 60))
         self.canvas.create_window (secret_work_x, 0, anchor="nw", tags="action_button", window=action_button)
         self.widgets_heights.append(self.canvas.bbox("action_button")[3])
 
         self.page_function_calls()
         
+    def get_dominant_color(self, image: Image.Image, k: int = 4, sample_width: int = 300) -> str:
+        width, height = image.size
+        image = image.copy().resize((sample_width, int(sample_width/(width/height))))  # Resize the image to speed up processing
+        image = image.convert('RGB')
+        pixels = np.array(image)
+        pixels = pixels.reshape(-1, 3)  # Reshape the image to be a list of pixels
+
+        # Perform KMeans clustering
+        kmeans = KMeans(n_clusters=k)
+        kmeans.fit(pixels)
+        
+        # Find the cluster center that is most common
+        counts = np.bincount(kmeans.labels_)
+        dominant_color = kmeans.cluster_centers_[np.argmax(counts)]
+
+        r, g, b = dominant_color
+        luminance = 0.299*r + 0.587*g + 0.114*b
+
+        result = '#%02x%02x%02x' % tuple(dominant_color.astype(int))    # rgb to hex
+        return result, luminance
+            
     @lru_cache(maxsize=5)   #! careful may not release the class instance from memory (https://stackoverflow.com/questions/33672412/python-functools-lru-cache-with-instance-methods-release-object)
     def resize_image(self, width: int, height: int) -> Image.Image:
         resized_img = self.new_img.copy().resize((width, height))
@@ -760,4 +783,5 @@ class Banner(ctk.CTkFrame):
     #! Current probelms:
     #//  1. when scaling down the image (reducing the width of the window) the if condition is not correct yet.
     #//  2. the text wrap isn't ready yet (doesn't allow for the increase of decrease of the num of lines). 
-    #*   3. need to work on the color choice for the text and button (probably based on the overlay_color lightness)
+    #//  3. need to work on the color choice for the text and button (probably based on the overlay_color lightness)
+    #*   4. Check on the image placement when (its width is so big). Maybe make it so that it is always centered, with the first 1/6 of the canvas width as the limit.
