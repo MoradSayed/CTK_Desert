@@ -5,7 +5,7 @@ from .Core import userChest as Chest
 from .Page_base_model import Page_BM
 from .Theme import *
 from .utils import hvr_clr_g, change_pixel_color, color_finder
-from typing import Union, Tuple, Callable, Optional, Any, List
+from typing import Union, Tuple, Callable, Optional, Literal, Any, List
 from methodtools import lru_cache
 from sklearn.cluster import KMeans
 
@@ -671,8 +671,11 @@ class Banner(ctk.CTkFrame):
         alpha_gradient = np.linspace(0, 255, int(self.image_calc_width*overlay), dtype=np.uint8)  # Create a transparency gradient from 0 to 255
         img_array[:, :int(self.image_calc_width*overlay), 3] = alpha_gradient  # Assign the gradient to the alpha channel
         self.new_img = Image.fromarray(img_array)
-        self.im_tk  = self.resize_image(self.image_calc_width, self.image_calc_height)
-        
+        self.im_tk  = self._resize_image(self.image_calc_width, self.image_calc_height)        
+
+        self.ori_width, self.ori_height = self.image_calc_width, self.image_calc_height
+        self.last_image_state : Literal["zoomed", "original"] = "original"
+
         self.padding = (font2[1]/1.5)*Chest.scaleFactor
         self.multi = 2.5
         secret_work_x = -2560        # 2560 just acts as a large num (out of view)
@@ -692,7 +695,7 @@ class Banner(ctk.CTkFrame):
             self.widgets_heights.append(0)
             self.content = True
 
-        action_button = ctk.CTkButton(self, text=button_text, font=(font[0], font2[1]), corner_radius=0, command=button_command, text_color=fill, 
+        action_button = ctk.CTkButton(self, text=f" {button_text} ", font=(font[0], font2[1]), corner_radius=0, command=button_command, text_color=fill, 
                                       fg_color = hvr_clr_g(overlay_color, hvr, 40), hover_color = hvr_clr_g(overlay_color, hvr, 60))
         self.canvas.create_window (secret_work_x, 0, anchor="nw", tags="action_button", window=action_button)
         self.widgets_heights.append(self.canvas.bbox("action_button")[3])
@@ -721,17 +724,37 @@ class Banner(ctk.CTkFrame):
         return result, luminance
             
     @lru_cache(maxsize=5)   #! careful may not release the class instance from memory (https://stackoverflow.com/questions/33672412/python-functools-lru-cache-with-instance-methods-release-object)
-    def resize_image(self, width: int, height: int) -> Image.Image:
+    def _resize_image(self, width: int, height: int) -> Image.Image:
         resized_img = self.new_img.copy().resize((width, height))
         result = ImageTk.PhotoImage(resized_img)
         return result
 
-    def on_start(self):
+    def _image_logic(self):
+        if self.ori_width < self.canvas_width*(2/3):
+            self.image_calc_width  = int(2*self.canvas_width/3)
+            self.image_calc_height = int(self.image_calc_width/self.ratio)
+            self.im_tk = self._resize_image(self.image_calc_width, self.image_calc_height)
+            self.canvas.itemconfigure("banner_image", image=self.im_tk)
+            self.last_image_state = "zoomed"
+        elif self.last_image_state == "zoomed": # the image width is larger than the 2/3th and the image state is zoomed
+            self.image_calc_height = int(self.canvas_height)
+            self.image_calc_width  = int(self.image_calc_height*self.ratio)
+            self.im_tk = self._resize_image(self.image_calc_width, self.image_calc_height)
+            self.canvas.itemconfigure("banner_image", image=self.im_tk)
+            self.last_image_state = "original"
+
+        limit = self.canvas_width*(7/9)
+        if self.ori_width < limit:
+            self.canvas.coords("banner_image", self.canvas_width, self.canvas_height/2)
+        else:
+            self.canvas.coords("banner_image", self.canvas_width+((self.ori_width-limit)/2), self.canvas_height/2)
+
+    def _on_start(self):
         self.canvas_width = self.canvas.winfo_width()
         self.canvas_height = self.canvas.winfo_height()
         self.starting_x_pos = 68*Chest.scaleFactor
 
-        self.canvas.coords("banner_image", self.canvas_width, self.canvas_height/2)
+        self._image_logic()
 
         if self.content:
             self.canvas.itemconfigure("banner_content", width=(self.canvas_width/3)-(self.starting_x_pos))
@@ -746,23 +769,11 @@ class Banner(ctk.CTkFrame):
         else:
             self.canvas.moveto("action_button" , self.starting_x_pos, starting_y_pos + self.widgets_heights[0])
     
-    def on_update(self):
+    def _on_update(self):
         self.canvas_width = self.canvas.winfo_width()
         self.canvas_height = self.canvas.winfo_height()
 
-        calc_width  = int(2*self.canvas_width/3)
-        calc_height = int(calc_width/self.ratio)
-        if calc_height > self.canvas_height:
-            self.image_calc_width  = calc_width
-            self.image_calc_height = calc_height
-            self.im_tk = self.resize_image(self.image_calc_width, self.image_calc_height)
-            self.canvas.itemconfigure("banner_image", image=self.im_tk)
-        else:
-            self.image_calc_height = int(self.canvas_height)
-            self.image_calc_width  = int(self.image_calc_height*self.ratio)
-            self.im_tk = self.resize_image(self.image_calc_width, self.image_calc_height)
-            self.canvas.itemconfigure("banner_image", image=self.im_tk)
-        self.canvas.coords("banner_image", self.canvas_width, self.canvas_height/2)
+        self._image_logic()
 
         if self.content:
             y_before = self.canvas.bbox("banner_content")[3]
@@ -779,13 +790,14 @@ class Banner(ctk.CTkFrame):
                 self.canvas.moveto("action_button" , "", starting_y_pos + self.widgets_heights[0] + self.widgets_heights[1])
 
     def page_function_calls(self):
-        self.page.starting_call_list.append(self.on_start)
-        self.page.updating_call_list.append(self.on_update)
+        self.page.starting_call_list.append(self._on_start)
+        self.page.updating_call_list.append(self._on_update)
 
     #! Current probelms:
     #//  1. when scaling down the image (reducing the width of the window) the if condition is not correct yet.
     #//  2. the text wrap isn't ready yet (doesn't allow for the increase of decrease of the num of lines). 
     #//  3. need to work on the color choice for the text and button (probably based on the overlay_color lightness)
-    #*   4. Check on the image placement when (its width is so big). Maybe make it so that it is always centered, with the first 1/6 of the canvas width as the limit.
+    #//  4. Check on the image placement when (its width is so big). Maybe make it so that it is always centered, with the first 1/6 of the canvas width as the limit.
+    #*   5. the overlay needs some work
 
 # Note: canvas images and canvas text don't scale with display scale by default, so they need to be updated manually depending on the scale.
