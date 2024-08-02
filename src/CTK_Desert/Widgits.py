@@ -633,7 +633,7 @@ class Banner(ctk.CTkFrame):
                  button_text: str = "Click", 
                  button_command: Callable = lambda: None, 
                  shifter: int = 0.7,  #? shifter is a value between -1 and 1
-                 overlay: int = 0.55, #? overlay is a value between 0 and 1
+                 overlay: int = 0.5, #? overlay is a value between 0 and 1
                  font: Union[Tuple[str, int], ctk.CTkFont] = (FONT_B, 20), 
                  font2: Union[Tuple[str, int], ctk.CTkFont] = (FONT, 12), 
                  ): 
@@ -648,12 +648,12 @@ class Banner(ctk.CTkFrame):
         font2 = (font2[0], int(font2[1]*Chest.scaleFactor))
         
         if isinstance(image, str):
-            ori_img = Image.open(image)
+            self.ori_img = Image.open(image)
         elif isinstance(image, Image.Image):
-            ori_img = image
+            self.ori_img = image
         else:
             raise TypeError("image should be a path to an image or an Image object.")
-        overlay_color, luminance = self.get_dominant_color(ori_img)  # 0.25 secs, need to find a way to make it faster
+        overlay_color, rgb_value, luminance = self.get_dominant_color(self.ori_img)  # 0.25 secs, need to find a way to make it faster
         if luminance > 128:
             fill = LIGHT_MODE["text"]
             hvr = "l" 
@@ -661,17 +661,20 @@ class Banner(ctk.CTkFrame):
             fill = DARK_MODE["text"]
             hvr = "d" 
         
-        width, height = ori_img.size
+        width, height = self.ori_img.size
         self.ratio = width/height
         self.image_calc_height = int(Chest.Window.winfo_vrootheight()*0.4)
         self.image_calc_width  = int(self.image_calc_height*self.ratio)
 
-        ori_img = ori_img.convert("RGBA")
-        img_array = np.array(ori_img)
-        alpha_gradient = np.linspace(0, 255, int(self.image_calc_width*overlay), dtype=np.uint8)  # Create a transparency gradient from 0 to 255
-        img_array[:, :int(self.image_calc_width*overlay), 3] = alpha_gradient  # Assign the gradient to the alpha channel
-        self.new_img = Image.fromarray(img_array)
-        self.im_tk  = self._resize_image(self.image_calc_width, self.image_calc_height)        
+        self.ori_img = self.ori_img.convert("RGBA")
+        self.im_tk  = self._resize_image(self.image_calc_width, self.image_calc_height)
+
+        img_array = np.zeros((self.image_calc_height, self.image_calc_width, 4), dtype=np.uint8)
+        img_array[:, :, :3] = rgb_value[:]  # Set the RGB channels
+        alpha_gradient = np.linspace(255, 0, int(self.image_calc_width*overlay), dtype=np.uint8)
+        img_array[:, :alpha_gradient.size, 3] = alpha_gradient
+        self.gradient_mask = Image.fromarray(img_array)
+        self.mask_tk = ImageTk.PhotoImage(self.gradient_mask)
 
         self.ori_width, self.ori_height = self.image_calc_width, self.image_calc_height
         self.last_image_state : Literal["zoomed", "original"] = "original"
@@ -683,6 +686,7 @@ class Banner(ctk.CTkFrame):
         self.canvas = ctk.CTkCanvas(self, bg=overlay_color, bd=0, highlightthickness=0, relief='ridge', height=self.image_calc_height)
         self.canvas.pack(fill="x")
         self.canvas.create_image(secret_work_x, self.image_calc_height/2, anchor="e", tags="banner_image", image=self.im_tk, )
+        self.canvas.create_image(secret_work_x, 0, anchor="nw", tags="banner_overlay", image=self.mask_tk)
 
         self.widgets_heights = []   #? Title, Content, Button
         self.total_height = 0
@@ -721,11 +725,17 @@ class Banner(ctk.CTkFrame):
         luminance = 0.299*r + 0.587*g + 0.114*b
 
         result = '#%02x%02x%02x' % tuple(dominant_color.astype(int))    # rgb to hex
-        return result, luminance
+        return result, tuple(dominant_color.astype(int)), luminance
             
     @lru_cache(maxsize=5)   #! careful may not release the class instance from memory (https://stackoverflow.com/questions/33672412/python-functools-lru-cache-with-instance-methods-release-object)
     def _resize_image(self, width: int, height: int) -> Image.Image:
-        resized_img = self.new_img.copy().resize((width, height))
+        resized_img = self.ori_img.copy().resize((width, height))
+        result = ImageTk.PhotoImage(resized_img)
+        return result
+
+    @lru_cache(maxsize=5)   #! careful may not release the class instance from memory (https://stackoverflow.com/questions/33672412/python-functools-lru-cache-with-instance-methods-release-object)
+    def _resize_overlay(self, width: int, height: int) -> Image.Image:
+        resized_img = self.gradient_mask.copy().resize((width, height))
         result = ImageTk.PhotoImage(resized_img)
         return result
 
@@ -748,6 +758,13 @@ class Banner(ctk.CTkFrame):
             self.canvas.coords("banner_image", self.canvas_width, self.canvas_height/2)
         else:
             self.canvas.coords("banner_image", self.canvas_width+((self.ori_width-limit)/2), self.canvas_height/2)
+
+        overlay_x1 = max(self.canvas.bbox("banner_image")[0], 0)
+        overlay_width = self.canvas_width - overlay_x1
+        if self.mask_tk.width() != overlay_width:
+            self.mask_tk = self._resize_overlay(overlay_width, self.canvas_height)
+            self.canvas.itemconfigure("banner_overlay", image=self.mask_tk)
+        self.canvas.moveto("banner_overlay", overlay_x1, "")
 
     def _on_start(self):
         self.canvas_width = self.canvas.winfo_width()
@@ -798,6 +815,6 @@ class Banner(ctk.CTkFrame):
     #//  2. the text wrap isn't ready yet (doesn't allow for the increase of decrease of the num of lines). 
     #//  3. need to work on the color choice for the text and button (probably based on the overlay_color lightness)
     #//  4. Check on the image placement when (its width is so big). Maybe make it so that it is always centered, with the first 1/6 of the canvas width as the limit.
-    #*   5. the overlay needs some work
+    #//  5. the overlay needs some work
 
 # Note: canvas images and canvas text don't scale with display scale by default, so they need to be updated manually depending on the scale.
