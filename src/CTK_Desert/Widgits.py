@@ -735,7 +735,7 @@ class Banner(ctk.CTkFrame):
 
     @lru_cache(maxsize=5)   #! careful may not release the class instance from memory (https://stackoverflow.com/questions/33672412/python-functools-lru-cache-with-instance-methods-release-object)
     def _resize_overlay(self, width: int, height: int) -> Image.Image:
-        resized_img = self.gradient_mask.copy().resize((width, height))
+        resized_img = self.gradient_mask.copy().resize((width, height), Image.NEAREST)
         result = ImageTk.PhotoImage(resized_img)
         return result
 
