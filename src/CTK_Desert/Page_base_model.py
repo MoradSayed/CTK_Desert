@@ -3,13 +3,13 @@ import customtkinter as ctk
 from typing import Union, Tuple, Callable
 
 from .Core  import userChest as Chest
-from .Theme import *
+from .Theme import theme, change_pixel_color
 from .utils import hvr_clr_g
 
 
 class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.Scrollable_frame"
     def __init__(self, 
-                 color:       Tuple[str, str] = (hvr_clr_g(LIGHT_MODE["background"], "l"), hvr_clr_g(DARK_MODE["background"], "d")), 
+                 color:       Tuple[str, str] = hvr_clr_g(theme.Cbg, "ld"), 
                  scrollable:  bool = True, 
                  start_func:  Callable[[None], None] = lambda: None, 
                  pick_func:   Callable[[None], None] = lambda: None, 
@@ -43,7 +43,7 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.Scrollable_fra
                                                bd=0, highlightthickness=0, relief = 'ridge')
             self.Scrollable_canvas.pack(fill="both", expand=True)
             
-            self.Scrollable_frame = ctk.CTkFrame(self.Scrollable_canvas, fg_color=color, bg_color=(LIGHT_MODE["background"], DARK_MODE["background"]))
+            self.Scrollable_frame = ctk.CTkFrame(self.Scrollable_canvas, fg_color=color, bg_color=theme.Cbg)
             self.Scrollable_canvas.create_window(
                 (0,0), 
                 window=self.Scrollable_frame, 
@@ -53,14 +53,14 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.Scrollable_fra
                 tags= "frame")
             
             self.content_frame = ctk.CTkFrame(self.Scrollable_frame, fg_color=color, 
-                                              background_corner_colors=((LIGHT_MODE["background"], DARK_MODE["background"]), (LIGHT_MODE["background"], DARK_MODE["background"]), (color), (color)))
+                                              background_corner_colors=(theme.Cbg, theme.Cbg, (color), (color)))
             self.content_frame.pack(fill="x")
 
             self.scroll_bar = ctk.CTkScrollbar(Chest.Manager.scroll_bar_frame, orientation="vertical", 
-                                               command=self.Scrollable_canvas.yview, button_color=color, button_hover_color=(hvr_clr_g(color[0], "l"), hvr_clr_g(color[1], "d")))
+                                               command=self.Scrollable_canvas.yview, button_color=color, button_hover_color=hvr_clr_g(color, "ld"))
             self.Scrollable_canvas.config(yscrollcommand=self.scroll_bar.set)
         else:
-            self.content_frame = ctk.CTkFrame(self, fg_color=color, bg_color=(LIGHT_MODE["background"], DARK_MODE["background"]))
+            self.content_frame = ctk.CTkFrame(self, fg_color=color, bg_color=theme.Cbg)
             self.content_frame.pack(fill="both", expand=True)
 
         self.menu_frame = self.tool_menu()
@@ -161,7 +161,7 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.Scrollable_fra
         return self.tools_f
 
     def add_menu_button(self, icon_path, command, size = (40, 40)):
-        button_image = change_pixel_color(icon_path, color=f'{ICONS["_l"]}+{ICONS["_d"]}', return_img=True)
+        button_image = change_pixel_color(icon_path, colors=theme.icon_norm, return_img=True)
         button_image = ctk.CTkImage(*button_image, size=size)
         ctk.CTkButton(self.tools_f, text="", fg_color="transparent", hover_color=Chest.Manager.menu_frame._fg_color, image=button_image, 
                       command=command, ).pack()

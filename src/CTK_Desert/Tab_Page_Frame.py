@@ -1,4 +1,4 @@
-import os, importlib, copy
+import os, importlib, copy, glob
 import importlib.util
 import customtkinter as ctk
 from PIL import Image
@@ -7,7 +7,7 @@ import inspect, send2trash
 import win32api
 
 from .Core import userChest as Chest
-from .Theme import *
+from .Theme import theme
 from .Top_level_dialog import Dialog
 from .utils import hvr_clr_g
 
@@ -17,7 +17,7 @@ from .Workspace import Workspace
 class Frame(ctk.CTkFrame):
     
     def __init__ (self, parent, usr_assets_dir, page_choise):
-        super().__init__(parent, fg_color=(LIGHT_MODE["background"], DARK_MODE["background"]))
+        super().__init__(parent, fg_color=theme.Cbg)
         self.current_dir = os.path.dirname(__file__)
         self.original_icons_dir = f"{self.current_dir}\\images\\Icons\\"
         self.user_icons_dir = os.path.join(usr_assets_dir, "Images\\")
@@ -70,7 +70,7 @@ class Frame(ctk.CTkFrame):
 
 
     def menu(self):
-        self.menu_frame = ctk.CTkFrame(self, fg_color=(hvr_clr_g(LIGHT_MODE["background"], "l"), hvr_clr_g(DARK_MODE["background"], "d")), width=70)
+        self.menu_frame = ctk.CTkFrame(self, fg_color=hvr_clr_g(theme.Cbg, "ld"), width=70)
         self.menu_frame.pack(side="left", fill="y", pady=(0, 27), padx=(0, 20))
         self.menu_frame.pack_propagate(0)
 
@@ -117,7 +117,7 @@ class Frame(ctk.CTkFrame):
 
     def tab(self, tab, parent, btn_size=(30,30)):
         directory = self.original_icons_dir if tab == "Workspace" or tab == "Settings" else self.user_icons_dir
-        button = ctk.CTkButton(parent, text="", fg_color="transparent", hover_color=(hvr_clr_g(LIGHT_MODE["background"], "l"), hvr_clr_g(DARK_MODE["background"], "d")), image=ctk.CTkImage(Image.open(f"{directory}{tab.lower()}_l.png"), Image.open(f"{directory}{tab.lower()}_d.png"), btn_size), command = lambda: self.page_switcher(f'{tab}'))
+        button = ctk.CTkButton(parent, text="", fg_color="transparent", hover_color=hvr_clr_g(theme.Cbg, "ld"), image=ctk.CTkImage(Image.open(f"{directory}{tab.lower()}_l.png"), Image.open(f"{directory}{tab.lower()}_d.png"), btn_size), command = lambda: self.page_switcher(f'{tab}'))
         button.pack(ipadx = 10, pady=10)
         return button
 
@@ -257,11 +257,11 @@ class Frame(ctk.CTkFrame):
             os.remove(dir)
         else:
             send2trash.send2trash(dir)
-        for n, i in enumerate(ICONS):
+        for n, file in enumerate(glob.glob(f"{self.user_icons_dir}/{name.lower()}*")):
             if shift_del:
-                os.remove(os.path.join(self.user_icons_dir, f"{name.lower()}{i}.png"))
+                os.remove(file)
             else:
-                send2trash.send2trash(os.path.join(self.user_icons_dir, f"{name.lower()}{i}.png"))
+                send2trash.send2trash(file)
             if n == 3:
                 break
 

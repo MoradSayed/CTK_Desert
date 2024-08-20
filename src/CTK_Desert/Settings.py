@@ -5,7 +5,7 @@ import customtkinter as ctk
 
 from .Core import userChest as Chest
 from .Page_base_model import Page_BM
-from .Theme import *
+from .Theme import theme
 from .Widgits import C_Widgits, small_tabs
 
 
@@ -21,11 +21,11 @@ class Settings(Page_BM):
         self.c_wdgts = C_Widgits(page_class = self, parent = self.addables_frame)
         self.test_num = 0
 
-        self.settings_label = ctk.CTkLabel(self.frame, text="Settings", font=(FONT_B, 40))
+        self.settings_label = ctk.CTkLabel(self.frame, text="Settings", font=(theme.font_B, 40))
         self.settings_label.pack(fill="x", padx=20, pady=(20, 0))
 
         self.appearance_sec = self.c_wdgts.section("Appearance")
-        self.theme_op, themeVar = self.c_wdgts.ComboBox_unit(self.appearance_sec, "Theme", ["System", "Light", "Dark"], Chest.Get_Prefered_Theme().capitalize(), Chest.Set_Prefered_Theme)  #? combobox sends an argument with the chosen value
+        self.theme_op, themeVar = self.c_wdgts.ComboBox_unit(self.appearance_sec, "Theme", ["System", "Light", "Dark"], Chest.Get_Prefered_Theme_Mode().capitalize(), Chest.Set_Prefered_Theme_Mode)  #? combobox sends an argument with the chosen value
         self.Reset_op   = self.c_wdgts.Button_unit(self.appearance_sec, "Add a Section", "+", self.test_func)
 
         self.Advanced_Settings = self.c_wdgts.section("Advanced Settings")

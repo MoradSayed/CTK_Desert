@@ -2,7 +2,7 @@ import customtkinter as ctk
 from ctypes import windll
 import os, json, customtkinter as ctk
 from winreg import *
-from .Theme import *
+from .Theme import theme
 class Chest():
     def __init__(self):
         self.userAssetsDirectory = None
@@ -99,7 +99,7 @@ class Chest():
         """
         self.Manager.Subpage_return(Main_page_name, Sub_page_name)
 
-    def Get_Prefered_Theme(self):
+    def Get_Prefered_Theme_Mode(self):
         """Returns the prefered theme of the app
 
         Returns:
@@ -107,9 +107,9 @@ class Chest():
         """
         with open(os.path.join(self.userAssetsDirectory, 'preferences.json'), 'r') as f:
             theme_data = json.load(f)
-        return theme_data["theme"]
+        return theme_data["theme"]["mode"]
 
-    def Set_Prefered_Theme(self, Target_Theme):
+    def Set_Prefered_Theme_Mode(self, Target_Theme):
         """Changes the theme of the app to the target theme, and saves the preference for the next time the app is opened
 
         Args:
@@ -117,11 +117,12 @@ class Chest():
         """
         new_theme = Target_Theme.lower()
 
-        with open(os.path.join(self.userAssetsDirectory, 'preferences.json'), 'r') as f:
+        with open(os.path.join(self.userAssetsDirectory, 'preferences.json'), 'r+') as f:
             theme_data = json.load(f)
-        theme_data["theme"] = new_theme
-        with open(os.path.join(self.userAssetsDirectory, 'preferences.json'), 'w') as f:
+            theme_data["theme"]["mode"] = new_theme
+            f.seek(0)
             json.dump(theme_data, f, indent=4)
+            f.truncate()
 
         try:
             #changing the color of the title bar
@@ -130,7 +131,7 @@ class Chest():
                 key = OpenKey(registry, r'SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize')
                 mode = QueryValueEx(key, "AppsUseLightTheme")
                 new_theme = 'light' if mode[0] else 'dark'
-            self.Window.title_bar_color(TITLE_BAR_HEX_COLORS[f"{new_theme}"])
+            self.Window.title_bar_color(theme.TB_hex_clrs[f"{new_theme}"])
         except:
             pass
 

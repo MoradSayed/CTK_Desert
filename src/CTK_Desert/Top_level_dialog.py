@@ -1,9 +1,9 @@
 import customtkinter as ctk
 from ctypes import byref, c_int, sizeof, windll
-from typing import Callable 
+from typing import Callable, Optional
 import os, random
 from PIL import Image, ImageTk
-from .Theme import *
+from .Theme import theme
 from .utils import hvr_clr_g
 
 class Dialog(ctk.CTkToplevel):
@@ -26,7 +26,7 @@ class Dialog(ctk.CTkToplevel):
         # self.protocol("WM_DELETE_WINDOW", self._hide)
         self.attributes('-alpha', 0.98)
         self.attributes('-transparentcolor', self.ugliest_color)
-        windll.dwmapi.DwmSetWindowAttribute(windll.user32.GetParent(self.winfo_id()), 35, byref(c_int(hex_to_0x(backgroundColor))), sizeof(c_int))
+        windll.dwmapi.DwmSetWindowAttribute(windll.user32.GetParent(self.winfo_id()), 35, byref(c_int(theme._hex_to_0x(backgroundColor))), sizeof(c_int))
         self.iconbitmap(os.path.join(os.path.dirname(__file__), "images/empty.ico"))
 
         GWL_STYLE = -16
@@ -44,9 +44,9 @@ class Dialog(ctk.CTkToplevel):
         self.parent.geometry(f'+{self.winfo_x()}+{self.winfo_y()}')
 
     def new(self, tag: str, 
-            text: str = "Are you sure?", icon: str = None, font: tuple = (FONT_B, 20), 
-            button_text: str = "Confirm", button_font = (FONT, 18), button_color: str | tuple = (LIGHT_MODE["accent"], DARK_MODE["accent"]), button_function: Callable = lambda: None, 
-            checkbox_text: str = None, checkbox_font: tuple = (FONT, 18), cb_hover_color: str | tuple = (hvr_clr_g(LIGHT_MODE["accent"], "l"), hvr_clr_g(DARK_MODE["accent"], "d"))):
+            text: str = "Are you sure?", icon: Optional[str] = None, font: tuple = (theme.font_B, 20), 
+            button_text: str = "Confirm", button_font = (theme.font, 18), button_color: str | tuple = theme.Caccent, button_function: Callable = lambda: None, 
+            checkbox_text: Optional[str] = None, checkbox_font: tuple = (theme.font, 18), cb_hover_color: str | tuple = hvr_clr_g(theme.Caccent, "ld")):
 
         frame = ctk.CTkFrame(self.parent, fg_color=self.dialog_color, corner_radius=10, border_width=2)    # the border grows inwards, so we don't need to account for it later on
         
@@ -55,13 +55,15 @@ class Dialog(ctk.CTkToplevel):
             icon_size = (font[1]+10, font[1]+10)
             icon_exist = 1
             if type(icon) == str:
-                if icon not in ICONS:
-                    raise ValueError(f"{icon} not a valid icon name")
-                button_color = (LIGHT_MODE[icon], DARK_MODE[icon])
+                try:
+                    theme_var = getattr(theme, f"{icon}_icon")
+                except:
+                    raise ValueError(f"{icon} is not a valid icon name")
+                button_color = getattr(theme, f"C{icon}")
                 frame.configure(border_color = button_color)
-                if icon not in self.images:
-                    image = ICONS[icon]()
-                    self.images[icon]=((ImageTk.PhotoImage(image[0].resize(icon_size)), ImageTk.PhotoImage(image[1].resize(icon_size))))  #! need to add dynamic modes (Light and Dark modes)
+                if icon not in self.images:     #! on theme change (Desert, ...). We need to empty this dict
+                    image = theme_var
+                    self.images[icon]=(ImageTk.PhotoImage(image[0].resize(icon_size)), ImageTk.PhotoImage(image[1].resize(icon_size)))  #! need to add dynamic modes (Light and Dark modes)
             
             canvas = ctk.CTkCanvas(frame, bg=frame._fg_color, bd=0, highlightthickness=0, relief='ridge', width=icon_size[0], height=icon_size[1])
             canvas.create_image(0, 0, anchor="nw", image=self.images[icon][0 if ctk.get_appearance_mode() == "light" else 1])
@@ -79,7 +81,7 @@ class Dialog(ctk.CTkToplevel):
         if checkbox_text != None:
             checkbox_exist = 1
             cb_var = ctk.BooleanVar(value=False)
-            cb_hover_color = (hvr_clr_g(button_color[0], "l"), hvr_clr_g(button_color[1], "d"))
+            cb_hover_color = hvr_clr_g(button_color, "ld")
             checkbox = ctk.CTkCheckBox(frame, text=checkbox_text, font=checkbox_font, 
                                        checkmark_color=self.dialog_color, hover_color=cb_hover_color, border_color=cb_hover_color, fg_color=button_color, 
                                        variable=cb_var)
@@ -91,11 +93,11 @@ class Dialog(ctk.CTkToplevel):
         #^ Buttons
         buttons_frame = ctk.CTkFrame(frame, fg_color= "transparent")
         cancel_button = ctk.CTkButton(buttons_frame, text="Cancel", command=self._hide, font=button_font,
-                                      fg_color=(LIGHT_MODE["primary"], DARK_MODE["primary"]), hover_color=(hvr_clr_g(LIGHT_MODE["primary"], "l"), hvr_clr_g(DARK_MODE["primary"], "d")))
+                                      fg_color=theme.Cpri, hover_color=hvr_clr_g(theme.Cpri, "ld"))
         cancel_button.pack(expand=True, side="left", padx=10)
         if button_text != "":
             Confirm_button = ctk.CTkButton(buttons_frame, text=button_text, command=lambda func = button_function, state = cb_var: self._button_function(func, state), font=button_font,
-                                        fg_color=button_color, hover_color=(hvr_clr_g(button_color[0], "l", 10), hvr_clr_g(button_color[1], "d", 10)))
+                                        fg_color=button_color, hover_color=hvr_clr_g(button_color, "ld", 10))
             Confirm_button.pack(expand=True, side="right", padx=10)
         buttons_frame.grid(row = 1+checkbox_exist, column = icon_exist, sticky = "ne", pady = (2, 15), padx = 10)
 

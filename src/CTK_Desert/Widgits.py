@@ -3,7 +3,7 @@ from PIL import Image, ImageTk
 import numpy as np
 from .Core import userChest as Chest
 from .Page_base_model import Page_BM
-from .Theme import *
+from .Theme import theme
 from .utils import hvr_clr_g, change_pixel_color, color_finder
 from typing import Union, Tuple, Callable, Optional, Literal, Any, List
 from methodtools import lru_cache
@@ -17,8 +17,8 @@ class C_Widgits():
     def section(self, 
                 title:      str = None, 
                 fg_color:   Union[tuple, str] = "transparent", 
-                font:       Union[tuple, ctk.CTkFont] = (FONT_B, 25), 
-                text_color: Union[str, Tuple[str, str]] = (LIGHT_MODE["text"], DARK_MODE["text"]),
+                font:       Union[tuple, ctk.CTkFont] = (theme.font_B, 25), 
+                text_color: Union[str, Tuple[str, str]] = theme.Ctxt,
                 padx: Union[int, Tuple[int, int]] = 30, 
                 pady: Union[int, Tuple[int, int]] = (20, 0), 
                 inner_padx: Union[int, Tuple[int, int]] = 40,
@@ -45,9 +45,9 @@ class C_Widgits():
                        button_command:  Callable = None, 
                        icon_height:     int = 30, 
                        button_text:     str = "", 
-                       font:            Union[Tuple[str, int], ctk.CTkFont] = (FONT, 15), 
-                       fg_color:        Union[str, Tuple[str, str]] = (LIGHT_MODE["accent"], DARK_MODE["accent"]), 
-                       hover_color:     Union[str, Tuple[str, str]] = (hvr_clr_g(LIGHT_MODE["accent"], "l", 20), hvr_clr_g(DARK_MODE["accent"], "d", 20)) ):
+                       font:            Union[Tuple[str, int], ctk.CTkFont] = (theme.font, 15), 
+                       fg_color:        Union[str, Tuple[str, str]] = theme.Caccent, 
+                       hover_color:     Union[str, Tuple[str, str]] = hvr_clr_g(theme.Caccent, "ld") ):
 
             if button_icon != None:
                 if isinstance(button_icon, str):
@@ -75,7 +75,7 @@ class C_Widgits():
                
         unit_frame = ctk.CTkFrame(section, fg_color= "transparent")
 
-        unit_label = ctk.CTkLabel(unit_frame, text=f"{title}", font=(FONT, 20))
+        unit_label = ctk.CTkLabel(unit_frame, text=f"{title}", font=(theme.font, 20))
         unit_label.pack(side="left", fill="x")
 
         unit_frame.pack(fill="x", pady=(0, 20))
@@ -87,8 +87,8 @@ class C_Widgits():
                     command: Callable = lambda: None,
                     invert: bool = False,
                     lone_widget: bool = False,
-                    fg_color: Optional[Union[str, Tuple[str, str]]] = (LIGHT_MODE["accent"], DARK_MODE["accent"]),
-                    font: tuple = (FONT, 15),
+                    fg_color: Optional[Union[str, Tuple[str, str]]] = theme.Caccent,
+                    font: tuple = (theme.font, 15),
                     width: int = 140,
                     height: int = 28,
                     ):
@@ -107,14 +107,14 @@ class C_Widgits():
         else:
             border_width = None
             border_color = None
-            text_color  = (LIGHT_MODE["text"], DARK_MODE["text"])
-            hover_color = (hvr_clr_g(fg_color[0], "l"), hvr_clr_g(fg_color[1], "d"))
+            text_color  = theme.Ctxt
+            hover_color = hvr_clr_g(fg_color, "ld")
             
         unit_option = ctk.CTkButton(master = master, text = text, font = font, text_color = text_color, width = width, height = height, fg_color = fg_color, hover_color = hover_color, border_width = border_width, border_color = border_color, command = command)
         unit_option.pack(side="right", fill="x")
 
         if invert:  #? Careful that fg_color is now stored in the text_color var, and fg_color is actually "transparent". 
-            textclr_onEntry = (LIGHT_MODE["text"], DARK_MODE["text"]) if text_color != (LIGHT_MODE["text"], DARK_MODE["text"]) else (DARK_MODE["text"], LIGHT_MODE["text"])
+            textclr_onEntry = theme.Ctxt if text_color != theme.Ctxt else theme.Ctxt[::-1]
             unit_option.bind("<Enter>", command=lambda e: unit_option.configure(fg_color=text_color, text_color=textclr_onEntry))
             unit_option.bind("<Leave>", command=lambda e: unit_option.configure(fg_color="transparent", text_color=text_color))
 
@@ -126,9 +126,9 @@ class C_Widgits():
                       command: Union[Callable[[str], Any], None] = lambda var: None, 
                       lone_widget: bool = False,
                       variable: Union[ctk.Variable, None] = None, 
-                      fg_color: Optional[Union[str, Tuple[str, str]]] = (LIGHT_MODE["primary"], DARK_MODE["primary"]),
-                      border_color: Optional[Union[str, Tuple[str, str]]] = (hvr_clr_g(LIGHT_MODE["primary"], "l", 30), hvr_clr_g(DARK_MODE["primary"], "d", 30)),
-                      font: Optional[tuple] = (FONT, 15),
+                      fg_color: Optional[Union[str, Tuple[str, str]]] = theme.Cpri,
+                      border_color: Optional[Union[str, Tuple[str, str]]] = hvr_clr_g(theme.Cpri, "ld", 30),
+                      font: Optional[tuple] = (theme.font, 15),
                       width: int = 140,
                       height: int = 28):
 
@@ -139,8 +139,8 @@ class C_Widgits():
 
         variable = ctk.StringVar(value=default) if variable is None else variable
         unit_option = ctk.CTkComboBox(master, fg_color = fg_color, border_color=border_color, button_color=border_color, 
-                                      font = font, text_color = (LIGHT_MODE["text"], DARK_MODE["text"]), width = width, height = height, 
-                                      dropdown_fg_color=fg_color, dropdown_font=font, dropdown_text_color = (LIGHT_MODE["text"], DARK_MODE["text"]),  
+                                      font = font, text_color = theme.Ctxt, width = width, height = height, 
+                                      dropdown_fg_color=fg_color, dropdown_font=font, dropdown_text_color = theme.Ctxt,  
                                       state = "readonly", values = values, variable = variable, command = command)
         # unit_option.set(f"{default}") if default is not None else None
         unit_option.pack(side="right", fill="x")
@@ -153,7 +153,7 @@ class C_Widgits():
                       lone_widget: bool = False,
                       variable: Union[ctk.Variable, None] = None,
 
-                      fg_color: Optional[Union[str, Tuple[str, str]]] = (LIGHT_MODE["accent"], DARK_MODE["accent"]),
+                      fg_color: Optional[Union[str, Tuple[str, str]]] = theme.Caccent,
                       border_color: Optional[Union[str, Tuple[str, str]]] = None,
                       checkmark_color: Optional[Union[str, Tuple[str, str]]] = None,
 
@@ -170,7 +170,7 @@ class C_Widgits():
 
         variable = ctk.BooleanVar(value=default) if variable is None else variable
         unit_option = ctk.CTkCheckBox(master, text="", width=width, height=height, checkbox_width=checkbox_width, checkbox_height=checkbox_height,
-                                      fg_color=fg_color, hover_color=(hvr_clr_g(fg_color[0], "l"), hvr_clr_g(fg_color[1], "d")), 
+                                      fg_color=fg_color, hover_color=hvr_clr_g(fg_color, "ld"), 
                                       border_color=border_color, checkmark_color=checkmark_color,
                                       command=command, variable=variable, onvalue=True, offvalue=False,)
         # if default != None:
@@ -185,7 +185,7 @@ class C_Widgits():
                    textvariable: Union[ctk.StringVar, None] = None,
 
                    fg_color: Optional[Union[str, Tuple[str, str]]] = "transparent",
-                   font: Optional[tuple] = (FONT, 15),
+                   font: Optional[tuple] = (theme.font, 15),
                    width: int = 140,
                    height: int = 28,
                    ):
@@ -195,13 +195,13 @@ class C_Widgits():
         else:
             master = section
 
-        text_color = (LIGHT_MODE["text"], DARK_MODE["text"])
+        text_color = theme.Ctxt
         textvariable = ctk.StringVar(value=placeholder_text) if textvariable is None else textvariable
         unit_option = ctk.CTkEntry(master, font=font, fg_color=fg_color, text_color=text_color, width=width, height=height, textvariable=textvariable)
         unit_option.pack(side="right", fill="x")
 
         if placeholder_text is not None:
-            plchldrClr = (LIGHT_MODE["primary"], DARK_MODE["primary"])
+            plchldrClr = theme.Cpri
             unit_option.configure(text_color= plchldrClr)
             unit_option.bind("<FocusIn>", lambda e, wdgt = unit_option, clr = text_color, textVar = textvariable: self._entryFin(e, wdgt, clr, textVar, placeholder_text))
             unit_option.bind("<FocusOut>", lambda e, wdgt = unit_option, clr = plchldrClr, textVar = textvariable: self._entryFout(e, wdgt, clr, textVar, placeholder_text))
@@ -275,11 +275,11 @@ class small_tabs(ctk.CTkFrame):
         canvas.pack(side="left")
         canvas.create_image(self.image_width/2, self.image_height/2, anchor="center", image=im_ctk)
 
-        tab_title = ctk.CTkLabel(st_frame, fg_color="transparent", text=f"{text}", font=(FONT, 20), anchor="w", justify="left")
+        tab_title = ctk.CTkLabel(st_frame, fg_color="transparent", text=f"{text}", font=(theme.font, 20), anchor="w", justify="left")
         tab_title.pack(padx=20, side="left", fill="x", expand=True)
 
         if button_icon: #^ make it so that it can be a directory(str), actual_image(Image.Image), custom_image(tuple), or None
-            button_image = change_pixel_color(button_icon, color=f'{ICONS["_l"]}+{ICONS["_d"]}', return_img=True)
+            button_image = change_pixel_color(button_icon, colors=theme.icon_norm, return_img=True)
             button_image = ctk.CTkImage(*button_image, size=icon_size)
             ctk.CTkButton(st_frame, text="", fg_color="transparent", hover_color=self.canvas_color, image=button_image, 
                           command=button_command, width=30, height=30).pack(side="right")
@@ -287,7 +287,7 @@ class small_tabs(ctk.CTkFrame):
         st_frame.pack(in_=tab_cont, expand=True, fill="x")
         tab_cont.pack(expand=True, fill="x")
 
-        White_line = ctk.CTkFrame(tab_cont, fg_color=(DARK_MODE["background"], LIGHT_MODE["background"]), height=2)
+        White_line = ctk.CTkFrame(tab_cont, fg_color=theme.Cbg[::-1], height=2)
         White_line.pack(fill="x", side="bottom", pady=self.whiteLine_pady)
 
         tab_title.configure(wraplength = tab_title.winfo_width()/Chest.scaleFactor)
@@ -309,7 +309,7 @@ class small_tabs(ctk.CTkFrame):
                 button = slot.winfo_children()[0]
                 tab = self.tabs[n]
                 button.pack(before=tab, side = "left", padx=(0, 20), pady=(0, self.whiteLine_pady*2), fill="y")
-                button.bind("<Enter>"   , lambda e, t=tab: t.configure(fg_color=(LIGHT_MODE["primary"], DARK_MODE["primary"])))
+                button.bind("<Enter>"   , lambda e, t=tab: t.configure(fg_color=theme.Cpri))
                 button.bind("<Leave>"   , lambda e, t=tab: t.configure(fg_color="transparent"))
                 button.bind("<B1-Motion>", lambda e, t=tab, b=button: self._on_motion(e, t, b))
                 button.bind("<ButtonRelease-1>", lambda e, Tc=slot, b=button: self._on_release(e, Tc, b))
@@ -455,8 +455,8 @@ class large_tabs(ctk.CTkFrame):
         canvas.pack()
         canvas.create_image(self.image_width/2, self.image_height/2, anchor="center", image=self.images[-1])
 
-        content = ctk.CTkFrame(tab_cont, fg_color=(LIGHT_MODE["primary"], DARK_MODE["primary"]), width=canvas.winfo_width())
-        text = ctk.CTkLabel(content, text=f"{text}", font=(FONT, 20), fg_color="transparent", text_color=(LIGHT_MODE["text"], DARK_MODE["text"]))
+        content = ctk.CTkFrame(tab_cont, fg_color=theme.Cpri, width=canvas.winfo_width())
+        text = ctk.CTkLabel(content, text=f"{text}", font=(theme.font, 20), fg_color="transparent", text_color=theme.Ctxt)
         text.pack(side="left", padx=10, pady=5)
         if button_icon != None:
             self.butt0n_icon(["_", content], button_icon, icon_size, button_command)
@@ -470,12 +470,12 @@ class large_tabs(ctk.CTkFrame):
             image = Image.open(button_icon)
             image = [image, image]
         else:
-            image = change_pixel_color(button_icon, color=f'{ICONS["_l"]}+{ICONS["_d"]}', return_img=True)
+            image = change_pixel_color(button_icon, colors=theme.icon_norm, return_img=True)
         w, h = image[0].size[0],image[0].size[1] # image[0] or image[1] doesn't matter
         r = w/h
         s = (int(icon_size*r), icon_size)
         image = ctk.CTkImage(image[0], image[1], size=s)
-        actbtn = ctk.CTkButton(parent[1], text="", image=image, fg_color="transparent", hover_color=(LIGHT_MODE["primary"], DARK_MODE["primary"]), 
+        actbtn = ctk.CTkButton(parent[1], text="", image=image, fg_color="transparent", hover_color=theme.Cpri, 
                                 width=int(icon_size*r), command= button_command)
         actbtn.pack(side="right", padx=5, pady=5)
 
@@ -634,8 +634,8 @@ class Banner(ctk.CTkFrame):
                  button_command: Callable = lambda: None, 
                  shifter: int = 0.7,  #? shifter is a value between -1 and 1
                  overlay: int = 0.5, #? overlay is a value between 0 and 1
-                 font: Union[Tuple[str, int], ctk.CTkFont] = (FONT_B, 20), 
-                 font2: Union[Tuple[str, int], ctk.CTkFont] = (FONT, 12), 
+                 font: Union[Tuple[str, int], ctk.CTkFont] = (theme.font_B, 20), 
+                 font2: Union[Tuple[str, int], ctk.CTkFont] = (theme.font, 12), 
                  ): 
         super().__init__(parent, fg_color="transparent")
         self.pack(fill="both")
@@ -655,10 +655,10 @@ class Banner(ctk.CTkFrame):
             raise TypeError("image should be a path to an image or an Image object.")
         overlay_color, rgb_value, luminance = self.get_dominant_color(self.ori_img)  # 0.25 secs, need to find a way to make it faster
         if luminance > 128:
-            fill = LIGHT_MODE["text"]
+            fill = theme.Ctxt[0]
             hvr = "l" 
         else: 
-            fill = DARK_MODE["text"]
+            fill = theme.Ctxt[1]
             hvr = "d" 
         
         width, height = self.ori_img.size

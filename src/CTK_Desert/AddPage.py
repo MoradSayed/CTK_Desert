@@ -4,7 +4,7 @@ from .Page_base_model import Page_BM
 from .Theme import *
 from .utils import hvr_clr_g, color_finder
 from .Widgits import C_Widgits
-from .Theme import *
+from .Theme import theme
 import os
 from PIL import Image
 import numpy as np
@@ -23,7 +23,7 @@ class AddPage(Page_BM):
         self.icon_path = None
         self.add_menu_button(r"C:\Users\Morad\Downloads\icons8-reload-64.png", lambda: Chest.reload_page("Workspace.AddPage"))
 
-        self.ws_label = ctk.CTkLabel(self.frame, text="New", font=(FONT_B, 40))
+        self.ws_label = ctk.CTkLabel(self.frame, text="New", font=(theme.font_B, 40))
         self.ws_label.pack(fill="x", padx=20, pady=20)
 
         self.c_wgts = C_Widgits(self, self.frame)
@@ -34,9 +34,9 @@ class AddPage(Page_BM):
         self.scrollableCB, self.scrollableCBVar = self.c_wgts.CheckBox_unit(self.content_sec, "Scrollable", True)
 
         self.confirmation_sec =    self.c_wgts.section(pady=5)
-        self.confirmation     =    self.c_wgts.Button_unit(self.confirmation_sec, "", "Create Page", self.create_page, height=50, font=(FONT_B, 17))
+        self.confirmation     =    self.c_wgts.Button_unit(self.confirmation_sec, "", "Create Page", self.create_page, height=50, font=(theme.font_B, 17))
         self.Back             =    self.c_wgts.Button_unit(self.confirmation.master, "", "Back", lambda: Chest.Return_SubPage("Workspace", "AddPage"), True,
-                                                           height=50, font=(FONT_B, 17), fg_color=(LIGHT_MODE["text"], DARK_MODE["text"]))
+                                                           height=50, font=(theme.font_B, 17), fg_color=theme.Ctxt)
 
     def on_start(self):
         pass
@@ -73,11 +73,11 @@ class AddPage(Page_BM):
             with open (os.path.join(self.pages_path, f"{file_name}.py"), 'w') as file:              # create a new file with the page name
                 file.write(data)
 
-            self.change_pixel_color(file_name) # get the image path from the dialog box, and the target color from Theme file
+            self.create_colored_icons(file_name) # get the image path from the dialog box, and the target color from Theme file
 
             self.menu_page_frame.new_page_constructor(file_name)        # Calling a func in the tab page frame to add the new page to the application
         
-    def change_pixel_color(self, file_name):
+    def create_colored_icons(self, file_name):
         # Open the image and convert it to RGBA mode
         img = Image.open(self.icon_path).convert("RGBA")
 
@@ -86,7 +86,7 @@ class AddPage(Page_BM):
 
         for i in self.icon_names:
             # Apply the target color to non-transparent pixels
-            img_array[img_array[..., 3] != 0, :3] = ICONS[i]
+            img_array[img_array[..., 3] != 0, :3] = getattr(theme, f"icon_{'sel' if i.endswith('s') else 'norm'}")[0 if i.startswith("_l") else 1]  # ICONS[i]
 
             # Create a new image from the modified array
             modified_img = Image.fromarray(img_array, "RGBA")

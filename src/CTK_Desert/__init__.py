@@ -6,13 +6,11 @@ try:
     from ctypes import byref, c_int, sizeof, windll 
 except:
     pass
-from .Tab_Page_Frame import Frame
 from .Core import userChest as Chest
-from .Theme import *
+from .Theme import theme
 
 class Desert(ctk.CTk):
     def __init__ (self, assets_dir, page_choise="Settings", spin=True, reload_on_save=False):
-        super().__init__(fg_color= (LIGHT_MODE["background"], DARK_MODE["background"]))
         caller_frame = inspect.stack()[1]
         caller_module = inspect.getmodule(caller_frame[0])
         if caller_module is not None:
@@ -22,11 +20,12 @@ class Desert(ctk.CTk):
                 os.chdir(os.path.dirname(os.path.abspath(caller_module.__file__)))
                 
         if os.path.isdir(assets_dir):
-            pass
+            Chest.userAssetsDirectory = assets_dir
         else:
             raise FileNotFoundError(f"Directory '{assets_dir}' not found")
+        theme.load()
+        super().__init__(fg_color= theme.Cbg)
         
-        # ctk.set_window_scaling(1.25)  # window geometry dimensions #!investigate (to use instead of the scale factor variable)
         self.title("")
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
@@ -45,17 +44,19 @@ class Desert(ctk.CTk):
         if not os.path.exists(assets_dir + "\Pages"):
             os.mkdir(assets_dir + "\Pages")
         if not os.path.isfile(assets_dir + "\preferences.json"):
+            with open(os.path.join(os.path.dirname(__file__), 'preferences.json'), 'r') as f:
+                pref_data = json.load(f)
             with open(os.path.join(assets_dir, 'preferences.json'), 'w') as f:
-                json.dump({"theme": "system"}, f, indent=4) #! needs to be edited after moving the themes to a separate file
+                json.dump(pref_data, f, indent=4)
 
-        Chest.userAssetsDirectory = assets_dir
-        self.App_Theme = Chest.Get_Prefered_Theme()
+        self.App_Theme = Chest.Get_Prefered_Theme_Mode()
         ctk.set_appearance_mode(f'{self.App_Theme}')
         if self.App_Theme == "system":
             self.App_Theme = ctk.get_appearance_mode()
-        self.title_bar_color(TITLE_BAR_HEX_COLORS[f"{self.App_Theme.lower()}"]) #change the title bar color
+        self.title_bar_color(theme.TB_hex_clrs[f"{self.App_Theme.lower()}"]) #change the title bar color
         
         self.bind_all("<Button-1>", lambda event: event.widget.focus_set())     #? to focus on the widget that was clicked on
+        from .Tab_Page_Frame import Frame
         self.Home = Frame(self, usr_assets_dir=assets_dir, page_choise=page_choise)
         
         if reload_on_save:

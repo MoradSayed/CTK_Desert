@@ -1,0 +1,71 @@
+{
+    "theme": {
+        "mode": "system",
+        "default_theme": "Desert",
+        "themes": [
+            {
+                "Desert": {
+                    "txt": [
+                        "#030303",
+                        "#ebebeb"
+                    ],
+                    "bg": [
+                        "#ebebeb",
+                        "#030303"
+                    ],
+                    "pri": [
+                        "#a3a3a3",
+                        "#3d3d3d"
+                    ],
+                    "sec": [
+                        "#d4d4d4",
+                        "#080808"
+                    ],
+                    "accent": [
+                        "#61bdab",
+                        "#25a188"
+                    ],
+                    "success": [
+                        "#28a745",
+                        "#1c7430"
+                    ],
+                    "danger": [
+                        "#dc3545",
+                        "#a71d2a"
+                    ],
+                    "warning": [
+                        "#fd7e14",
+                        "#d96b06"
+                    ],
+                    "info": [
+                        "#007bff",
+                        "#0056b3"
+                    ],
+                    "pending": [
+                        "#ffc107",
+                        "#d39e00"
+                    ], 
+                    "_norm": [
+                        "#4c4c4c",
+                        "#b3b3b3"
+                    ], 
+                    "_sel": [
+                        "#399583",
+                        "#4dc9b0"
+                    ]
+                }
+            }
+        ],
+        "default_font": "Space Mono",
+        "fonts":[
+            {
+                "Space Mono": {
+                    "font":    "Space Mono",
+                    "font_B":  "Space Mono Bold",
+                    "font_I":  "Space Mono Italic",
+                    "font_BI": "Space Mono Bold Italic" 
+                }
+            }
+        ]
+    }
+}

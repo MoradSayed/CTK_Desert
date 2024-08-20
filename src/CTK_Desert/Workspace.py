@@ -3,7 +3,7 @@ import os, inspect
 
 from .Core import userChest as Chest
 from .Page_base_model import Page_BM
-from .Theme import *
+from .Theme import theme
 from .Widgits import C_Widgits, large_tabs
 from .utils import color_finder
 
@@ -23,7 +23,7 @@ class Workspace(Page_BM):
         Chest.Store_SubPage("Workspace", AddPage)
         self.cwdgs = C_Widgits(self, self.frame)
 
-        self.workspace_label = ctk.CTkLabel(self.frame, text="Workspace", font=(FONT_B, 40))
+        self.workspace_label = ctk.CTkLabel(self.frame, text="Workspace", font=(theme.font_B, 40))
         self.workspace_label.pack(fill="x", padx=20, pady=(20, 0))
 
         # Section 1
