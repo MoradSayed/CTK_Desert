@@ -247,13 +247,11 @@ class small_tabs(ctk.CTkFrame):
         self.page_function_calls()
         
     def tab(self, text, image, button_icon=None, button_command=None, icon_size=(25, 25)):
-        if self.reorder_btn_state:
-            self.reorder()  # closes the reorder action if it is active
 
         tab_cont = ctk.CTkFrame(self, fg_color="transparent", height=self.image_height+self.whiteLine_pady+2)   # 2 for the white line
 
         st_frame = ctk.CTkFrame(self, fg_color="transparent", height=self.image_height)
-        ctk.CTkLabel(tab_cont, text="⥮", font=("", 30), fg_color="transparent", width=28)   # ⠿
+        reorder_btn = ctk.CTkLabel(tab_cont, text="⥮", font=("", 30), fg_color="transparent", width=28)   # ⠿
 
         if isinstance(image, Image.Image):
             im = image
@@ -299,6 +297,12 @@ class small_tabs(ctk.CTkFrame):
             self.update()
             tab_cont.configure(height=tab_cont.winfo_height()/Chest.scaleFactor)
             tab_cont.pack_propagate(0)
+        if self.reorder_btn_state:
+            reorder_btn.pack(before=st_frame, side = "left", padx=(0, 20), pady=(0, self.whiteLine_pady*2), fill="y")
+            reorder_btn.bind("<Enter>"   , lambda e, t=st_frame: t.configure(fg_color=theme.Cpri))
+            reorder_btn.bind("<Leave>"   , lambda e, t=st_frame: t.configure(fg_color="transparent"))
+            reorder_btn.bind("<B1-Motion>", lambda e, t=st_frame, b=reorder_btn: self._on_motion(e, t, b))
+            reorder_btn.bind("<ButtonRelease-1>", lambda e, Tc=tab_cont, b=reorder_btn: self._on_release(e, Tc, b))
         return tab_cont
 
     def reorder(self): # for in app swap
