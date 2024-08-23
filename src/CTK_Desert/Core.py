@@ -1,12 +1,26 @@
 import customtkinter as ctk
-from ctypes import windll
-import os, json, customtkinter as ctk
-from winreg import *
+import os, platform, json, customtkinter as ctk
 from .Theme import theme
+from typing import Callable, Literal
+_platform = platform.system()
+if _platform == "Windows":
+    from winreg import *
+    from ctypes import windll
+# elif _platform == "Linux":
+#     pass    #! to be implemented
+# elif _platform == "Darwin":
+#     pass    #! to be implemented
+
 class Chest():
     def __init__(self):
         self.userAssetsDirectory = None
         self._on_theme_change_jobs = []
+        self._OS: Literal["Windows", "Linux", "Darwin"] = _platform
+        if self._OS == "Windows":
+            self.scaleFactor = windll.shcore.GetScaleFactorForDevice(0) / 100
+        else:   #! for linux and mac (to be implemented)
+            self.scaleFactor = 1
+            
     def _D__Setup_Chest(self, window, frame):
         from .Tab_Page_Frame import Frame
         self.Window = window
@@ -19,7 +33,6 @@ class Chest():
         self.userPagesDirectory = self.Manager.U_Pages_dir
         self.toolsFrame = self.Manager.apps_frame
         self.Dialog_Manager = self.Manager.dialog_widget
-        self.scaleFactor = windll.shcore.GetScaleFactorForDevice(0) / 100
 
         self.thread_reload_var =  ctk.StringVar()
         self.thread_reload_var.trace_add("write", lambda *args: self.reload_page(self.thread_reload_var.get()))
@@ -40,7 +53,7 @@ class Chest():
         """
         self.Manager.page_switcher(Target_Page)
 
-    def reload_page(self, name, args: tuple = ()):
+    def reload_page(self, name: str, args: tuple = ()):
         """Reloads the page to apply any saved changes made to the code of the page
 
         Args:
@@ -49,7 +62,7 @@ class Chest():
         """
         self.Manager.reload_page(name, args)
 
-    def Store_a_Page(self, Target_Page: str, Switch=True):
+    def Store_a_Page(self, Target_Page: str, Switch: bool =True):
         """Constructs a new main page, so that it is ready to be opened at any moment
 
         Args:
@@ -109,7 +122,7 @@ class Chest():
             theme_data = json.load(f)
         return theme_data["theme"]["mode"]
 
-    def Set_Prefered_Theme_Mode(self, Target_Theme):
+    def Set_Prefered_Theme_Mode(self, Target_Theme: Literal["System", "Light", "Dark"]):
         """Changes the theme of the app to the target theme, and saves the preference for the next time the app is opened
 
         Args:
@@ -127,10 +140,13 @@ class Chest():
         try:
             #changing the color of the title bar
             if new_theme == "system":
-                registry = ConnectRegistry(None, HKEY_CURRENT_USER)
-                key = OpenKey(registry, r'SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize')
-                mode = QueryValueEx(key, "AppsUseLightTheme")
-                new_theme = 'light' if mode[0] else 'dark'
+                if self._OS == "Windows":
+                    registry = ConnectRegistry(None, HKEY_CURRENT_USER)
+                    key = OpenKey(registry, r'SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize')
+                    mode = QueryValueEx(key, "AppsUseLightTheme")
+                    new_theme = 'light' if mode[0] else 'dark'
+                else: #! for linux and mac (to be implemented)
+                    new_theme = 'dark'
             self.Window.title_bar_color(theme.TB_hex_clrs[f"{new_theme}"])
         except:
             pass
@@ -140,7 +156,7 @@ class Chest():
             for func in self._on_theme_change_jobs:
                 func()
 
-    def On_Theme_Change(self, func):
+    def On_Theme_Change(self, func: Callable):
         """Registers a function to be called when the theme is changed
 
         Args:

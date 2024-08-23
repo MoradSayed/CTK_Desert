@@ -1,10 +1,12 @@
 import customtkinter as ctk
-from ctypes import byref, c_int, sizeof, windll
-from typing import Callable, Optional
+from typing import Callable, Optional, Union
 import os, random
 from PIL import Image, ImageTk
 from .Theme import theme
 from .utils import hvr_clr_g
+from .Core import userChest as Chest
+if Chest._OS == "Windows":
+    from ctypes import byref, c_int, sizeof, windll
 
 class Dialog(ctk.CTkToplevel):
     def __init__(self, parent):
@@ -13,7 +15,7 @@ class Dialog(ctk.CTkToplevel):
         self.ugliest_color = "#4A412A"
         super().__init__(parent, fg_color=backgroundColor)
 
-        self.scaleFactor = windll.shcore.GetScaleFactorForDevice(0) / 100
+        self.scaleFactor = Chest.scaleFactor # windll.shcore.GetScaleFactorForDevice(0) / 100
         self.parent = parent
         self.dialogs = {}
         self.images = {}
@@ -29,14 +31,17 @@ class Dialog(ctk.CTkToplevel):
         windll.dwmapi.DwmSetWindowAttribute(windll.user32.GetParent(self.winfo_id()), 35, byref(c_int(theme._hex_to_0x(backgroundColor))), sizeof(c_int))
         self.iconbitmap(os.path.join(os.path.dirname(__file__), "images/empty.ico"))
 
-        GWL_STYLE = -16
-        WS_SYSMENU = 0x80000
-        
-        hwnd = windll.user32.GetParent(self.winfo_id())
-        current_style = windll.user32.GetWindowLongW(hwnd, GWL_STYLE)
-        new_style = current_style & ~WS_SYSMENU
-        windll.user32.SetWindowLongW(hwnd, GWL_STYLE, new_style)
-        windll.user32.SetWindowPos(hwnd, 0, 0, 0, 0, 0, 0x27)  # Update the window to apply the changes
+        if Chest._OS == "Windows":
+            GWL_STYLE = -16
+            WS_SYSMENU = 0x80000
+            
+            hwnd = windll.user32.GetParent(self.winfo_id())
+            current_style = windll.user32.GetWindowLongW(hwnd, GWL_STYLE)
+            new_style = current_style & ~WS_SYSMENU
+            windll.user32.SetWindowLongW(hwnd, GWL_STYLE, new_style)
+            windll.user32.SetWindowPos(hwnd, 0, 0, 0, 0, 0, 0x27)  # Update the window to apply the changes
+        # else:   #! for linux and mac (to be implemented)
+        #     pass
         
         self.withdraw()
         
@@ -45,8 +50,8 @@ class Dialog(ctk.CTkToplevel):
 
     def new(self, tag: str, 
             text: str = "Are you sure?", icon: Optional[str] = None, font: tuple = (theme.font_B, 20), 
-            button_text: str = "Confirm", button_font = (theme.font, 18), button_color: str | tuple = theme.Caccent, button_function: Callable = lambda: None, 
-            checkbox_text: Optional[str] = None, checkbox_font: tuple = (theme.font, 18), cb_hover_color: str | tuple = hvr_clr_g(theme.Caccent, "ld")):
+            button_text: str = "Confirm", button_font = (theme.font, 18), button_color: Union[str, tuple] = theme.Caccent, button_function: Callable = lambda: None, 
+            checkbox_text: Optional[str] = None, checkbox_font: tuple = (theme.font, 18), cb_hover_color: Union[str, tuple] = hvr_clr_g(theme.Caccent, "ld")):
 
         frame = ctk.CTkFrame(self.parent, fg_color=self.dialog_color, corner_radius=10, border_width=2)    # the border grows inwards, so we don't need to account for it later on
         
@@ -106,7 +111,7 @@ class Dialog(ctk.CTkToplevel):
         if tag != None:
             self.dialogs[tag] = (frame, _frame_cutout)
 
-    def _button_function(self, func: Callable, cb_state: ctk.BooleanVar | None):
+    def _button_function(self, func: Callable, cb_state: Optional[ctk.BooleanVar]):
         self._hide()
         try:
             func(cb_state.get()) if cb_state != None else func()

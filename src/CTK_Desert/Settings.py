@@ -1,5 +1,4 @@
 import json, os, random
-from winreg import *
 
 import customtkinter as ctk
 

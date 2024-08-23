@@ -17,7 +17,7 @@ class Workspace(Page_BM):
         self.frame = self.get_pf()
         self.mode = ctk.get_appearance_mode()
         self.frame_clr = color_finder(self.frame)
-        self.add_menu_button(r"C:\Users\Morad\Downloads\icons8-reload-64.png", lambda: Chest.reload_page("Workspace"))
+        # self.add_menu_button(r"C:\Users\Morad\Downloads\icons8-reload-64.png", lambda: Chest.reload_page("Workspace")) #! need to move the image to the library if i am gonna use it
 
         self.icons_path = Chest.Manager.original_icons_dir
         Chest.Store_SubPage("Workspace", AddPage)
@@ -28,7 +28,7 @@ class Workspace(Page_BM):
 
         # Section 1
         self.sectionframe = self.cwdgs.section("Pages")
-        self.cwdgs.section_button(section=self.sectionframe, fg_color="transparent", button_icon=r"C:\Users\Morad\Downloads\icons8-add-96.png", icon_height=30, 
+        self.cwdgs.section_button(section=self.sectionframe, fg_color="transparent", button_icon=r"C:\Users\Morad\Downloads\icons8-add-96.png", icon_height=30, #! /home/morad/Downloads/icons8-add-48.png
                                   button_command=lambda: Chest.Use_SubPage("Workspace", "AddPage"))
         # Section Unit (options)
         self.pages_tabs = large_tabs(self, self.sectionframe, autofit=True)

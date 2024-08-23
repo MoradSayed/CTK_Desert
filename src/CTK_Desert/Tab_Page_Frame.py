@@ -2,11 +2,26 @@ import os, importlib, copy, glob
 import importlib.util
 import customtkinter as ctk
 from PIL import Image
-import inspect, send2trash
-
-import win32api
+import inspect
 
 from .Core import userChest as Chest
+if Chest._OS == "Windows":
+    import win32api, send2trash
+    _LC_state = lambda: win32api.GetKeyState(0x01) < 0
+elif Chest._OS == "Linux":
+    from Xlib import X, display
+    _linux_disp = display.Display()             # Initialize the X server connection
+    _linux_root = _linux_disp.screen().root     # Get the root window
+    def _LC_state():
+        # Query the current state of the pointer (mouse)
+        pointer_data = _linux_root.query_pointer()
+        # Check if the left mouse button is pressed (Button1Mask)
+        left_button_mask = X.Button1Mask
+        is_pressed = pointer_data.mask & left_button_mask
+        return bool(is_pressed)
+# elif Chest._OS == "Darwin":
+#     pass    #! to be implemented
+
 from .Theme import theme
 from .Top_level_dialog import Dialog
 from .utils import hvr_clr_g
@@ -19,8 +34,8 @@ class Frame(ctk.CTkFrame):
     def __init__ (self, parent, usr_assets_dir, page_choise):
         super().__init__(parent, fg_color=theme.Cbg)
         self.current_dir = os.path.dirname(__file__)
-        self.original_icons_dir = f"{self.current_dir}\\images\\Icons\\"
-        self.user_icons_dir = os.path.join(usr_assets_dir, "Images\\")
+        self.original_icons_dir = os.path.join(self.current_dir, "images", "Icons")
+        self.user_icons_dir = os.path.join(usr_assets_dir, "Images")
         self.window = parent
         self.update_cover = ctk.CTkFrame(parent, fg_color="transparent")
 
@@ -54,7 +69,11 @@ class Frame(ctk.CTkFrame):
         self.size_event = None
         self.updating = False
 
-        self.dialog_widget = Dialog(self.window)
+        #! Atterntion here!!!!!!!!!!!
+        if Chest._OS == "Windows":
+            self.dialog_widget = Dialog(self.window)
+        else:
+            self.dialog_widget = None
 
         self.scroll_bar_frame = ctk.CTkFrame(self, fg_color="transparent", width=20)
         self.scroll_bar_frame.pack(side="right", fill="y", pady=(0, 27))
@@ -65,7 +84,7 @@ class Frame(ctk.CTkFrame):
         self.pack(expand = True, fill = "both")
 
         directory = self.original_icons_dir if self.page_choise == "Workspace" or self.page_choise == "Settings" else self.user_icons_dir
-        self.buttons[self.page_choise].configure(image=ctk.CTkImage(Image.open(f"{directory}{self.page_choise}_l_s.png"), Image.open(f"{directory}{self.page_choise}_d_s.png"), (45,45) if self.page_choise == "Workspace" else (30,30)))
+        self.buttons[self.page_choise].configure(image=ctk.CTkImage(Image.open(os.path.join(directory, f"{self.page_choise.lower()}_l_s.png")), Image.open(os.path.join(directory, f"{self.page_choise.lower()}_d_s.png")), (45,45) if self.page_choise == "Workspace" else (30,30)))
         self.pages_dict[self.page_choise].show_page()
 
 
@@ -117,7 +136,7 @@ class Frame(ctk.CTkFrame):
 
     def tab(self, tab, parent, btn_size=(30,30)):
         directory = self.original_icons_dir if tab == "Workspace" or tab == "Settings" else self.user_icons_dir
-        button = ctk.CTkButton(parent, text="", fg_color="transparent", hover_color=hvr_clr_g(theme.Cbg, "ld"), image=ctk.CTkImage(Image.open(f"{directory}{tab.lower()}_l.png"), Image.open(f"{directory}{tab.lower()}_d.png"), btn_size), command = lambda: self.page_switcher(f'{tab}'))
+        button = ctk.CTkButton(parent, text="", fg_color="transparent", hover_color=hvr_clr_g(theme.Cbg, "ld"), image=ctk.CTkImage(Image.open(os.path.join(directory, f"{tab.lower()}_l.png")), Image.open(os.path.join(directory, f"{tab.lower()}_d.png")), btn_size), command = lambda: self.page_switcher(f'{tab}'))
         button.pack(ipadx = 10, pady=10)
         return button
 
@@ -126,12 +145,12 @@ class Frame(ctk.CTkFrame):
             if self.pages_dict[self.page_choise].Leaving("global"):
                 self.pages_dict[self.page_choise].hide_page()
                 directory = self.original_icons_dir if self.page_choise == "Workspace" or self.page_choise == "Settings" else self.user_icons_dir
-                self.buttons[self.page_choise].configure(image=ctk.CTkImage(Image.open(f"{directory}{self.page_choise.lower()}_l.png"), Image.open(f"{directory}{self.page_choise.lower()}_d.png"), (45,45) if self.page_choise == "Workspace" else (30,30)))
+                self.buttons[self.page_choise].configure(image=ctk.CTkImage(Image.open(os.path.join(directory, f"{self.page_choise.lower()}_l.png")), Image.open(os.path.join(directory, f"{self.page_choise.lower()}_d.png")), (45,45) if self.page_choise == "Workspace" else (30,30)))
                 self.last_page = self.page_choise
                 # print(self.page_choise, ">>", buttonID)
                 self.page_choise = f'{buttonID}'
                 directory = self.original_icons_dir if buttonID == "Workspace" or buttonID == "Settings" else self.user_icons_dir
-                self.buttons[buttonID].configure(image=ctk.CTkImage(Image.open(f"{directory}{buttonID.lower()}_l_s.png"), Image.open(f"{directory}{buttonID.lower()}_d_s.png"), (45,45) if buttonID == "Workspace" else (30,30)))
+                self.buttons[buttonID].configure(image=ctk.CTkImage(Image.open(os.path.join(directory, f"{buttonID.lower()}_l_s.png")), Image.open(os.path.join(directory, f"{buttonID.lower()}_d_s.png")), (45,45) if buttonID == "Workspace" else (30,30)))
                 self.pages_dict[buttonID].show_page()
 
     def update_state_checker(self, event):
@@ -146,7 +165,7 @@ class Frame(ctk.CTkFrame):
                 self.check_click_state()
 
     def check_click_state(self):
-        if win32api.GetKeyState(0x01) < 0:
+        if _LC_state():     # it will check if the left mouse button is pressed (Custom function for each OS)
             self.after(50, self.check_click_state)
         else:
             # print("packing and updating")
@@ -164,7 +183,7 @@ class Frame(ctk.CTkFrame):
         self.window_width = self.size_event.width
         self.window_height = self.size_event.height
 
-    def ext_pages_importer(self, module_name, reload=False):
+    def ext_pages_importer(self, module_name, reload: bool =False):
         in_directory = self.U_Pages_dir
         reldotpath = in_directory.replace("/", ".").replace("\\", ".")
         if reload:
@@ -180,7 +199,7 @@ class Frame(ctk.CTkFrame):
         except Exception as e:
             print(f"Failed to import module {module_name}: {e}")
 
-    def new_page_constructor(self, name, switch: bool = True):
+    def new_page_constructor(self, name: str, switch: bool):
         self.ext_pages_importer(name)
 
         self.pages_dict[name] = eval(name + "()")    #calls all the contents of the tabs (but not displaying them) and passing the arguments, while saving them in a dict for later use
@@ -192,7 +211,7 @@ class Frame(ctk.CTkFrame):
         if switch:
             self.page_switcher(name)
 
-    def reload_page(self, name, args):
+    def reload_page(self, name: str, args):
         if name in self.mainpages_dict:
             self.ext_pages_importer(self.mainpages_dict[name], reload=True)
 
@@ -222,7 +241,11 @@ class Frame(ctk.CTkFrame):
                 self.pages_dict[splited_name[0]] = self.subpages_dict[name]
                 self.page_switcher(splited_name[0])
 
-    def delete_page(self, name, delete_subpages: bool = False, shift_del: bool = False):
+    def delete_page(self, name: str, delete_subpages: bool, shift_del: bool):
+        if shift_del==True and Chest._OS != "Windows":
+            Chest.Dialog_Manager.new("DsrtSys:Err-Del", "Shift+Delete is only available on Windows", "danger", button_text="")
+            Chest.Dialog_Manager.show("DsrtSys:Err-Del")
+            return False
         
         if name == self.page_choise:
             Chest.Dialog_Manager.new("DsrtSys:Err-Del", "You can't delete a page that's in use", "danger", button_text="")
@@ -267,14 +290,14 @@ class Frame(ctk.CTkFrame):
 
         return True
 
-    def Subpage_Construction(self, Main_page: str, Sub_page, keep: bool = True, args: tuple = ()): 
+    def Subpage_Construction(self, Main_page: str, Sub_page, keep: bool, args: tuple): 
         """Constructs the Subpage, so that it is ready to be opened at any moment
 
         Args:
             Main_page (str): used to get the name of the main page class "case sensitive"
             Sub_page (Class): used to initialize the subpage class with the necessary parameters
-            keep (bool, optional): keep the subpage if it already exists. Defaults to True.
-            args (tuple, optional): arguments to be passed to the subpage class. Defaults to ().
+            keep (bool, optional): keep the subpage if it already exists.
+            args (tuple, optional): arguments to be passed to the subpage class.
         """
         
         domain = f"{Main_page}.{Sub_page.__name__}"

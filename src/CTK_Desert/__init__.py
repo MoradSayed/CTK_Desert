@@ -2,11 +2,13 @@ import json, os, inspect
 import customtkinter as ctk
 import socket
 import threading, time
-try:
-    from ctypes import byref, c_int, sizeof, windll 
-except:
-    pass
 from .Core import userChest as Chest
+if Chest._OS == "Windows":
+    from ctypes import byref, c_int, sizeof, windll 
+# elif Chest._OS == "Linux":
+#     pass    #! to be implemented
+# elif Chest._OS == "Darwin":
+#     pass    #! to be implemented
 from .Theme import theme
 
 class Desert(ctk.CTk):
@@ -23,13 +25,31 @@ class Desert(ctk.CTk):
             Chest.userAssetsDirectory = assets_dir
         else:
             raise FileNotFoundError(f"Directory '{assets_dir}' not found")
+
+        _path = os.path.join(assets_dir, "Images")
+        if not os.path.exists(_path):
+            os.mkdir(_path)
+        _path = os.path.join(assets_dir, "Pages")
+        if not os.path.exists(_path):
+            os.mkdir(_path)
+        _path = os.path.join(assets_dir, "preferences.json")
+        if not os.path.isfile(_path):
+            with open(os.path.join(os.path.dirname(__file__), 'preferences.json'), 'r') as f:
+                pref_data = json.load(f)
+            with open(_path, 'w') as f:
+                json.dump(pref_data, f, indent=4)
+        _path = None
+
         theme.load()
         super().__init__(fg_color= theme.Cbg)
         
+        # if Chest._OS == "Linux":    # windows and macos are able to scale themself properly
+        #     ctk.set_widget_scaling(1.35)
+        #     ctk.set_window_scaling(1.0)
         self.title("")
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
-        scaleFactor = windll.shcore.GetScaleFactorForDevice(0) / 100
+        scaleFactor = Chest.scaleFactor
         window_width = int(960*scaleFactor)
         window_height = int(640*scaleFactor)
         self.geometry(f'{window_width}x{window_height}+{int((screen_width*scaleFactor/2)-(window_width*scaleFactor/2))}+{int((screen_height*scaleFactor/2)-(window_height*scaleFactor/2))}') #1.5 for the window scale (150%)
@@ -38,16 +58,6 @@ class Desert(ctk.CTk):
             self.iconbitmap(os.path.join(os.path.dirname(__file__), "images/empty.ico"))
         except:
             pass
-
-        if not os.path.exists(assets_dir + "\Images"):
-            os.mkdir(assets_dir + "\Images")
-        if not os.path.exists(assets_dir + "\Pages"):
-            os.mkdir(assets_dir + "\Pages")
-        if not os.path.isfile(assets_dir + "\preferences.json"):
-            with open(os.path.join(os.path.dirname(__file__), 'preferences.json'), 'r') as f:
-                pref_data = json.load(f)
-            with open(os.path.join(assets_dir, 'preferences.json'), 'w') as f:
-                json.dump(pref_data, f, indent=4)
 
         self.App_Theme = Chest.Get_Prefered_Theme_Mode()
         ctk.set_appearance_mode(f'{self.App_Theme}')
@@ -66,18 +76,18 @@ class Desert(ctk.CTk):
             self.mainloop()
 
     def title_bar_color(self, color):
-        try:
+        if Chest._OS == "Windows":
             windll.dwmapi.DwmSetWindowAttribute(
                 windll.user32.GetParent(self.winfo_id()), 
                 35, 
                 byref(c_int(color)), 
                 sizeof(c_int)
                 )
-        except:
-            pass
+        # else:   #! for linux and mac (to be implemented)
+        #     pass
 
         #^ Remove the title bar
-        #! well need to edit the Dialog widgit and edit the Frame layout
+        #! will need to edit the Dialog widgit and edit the Frame layout
         # # Constants from the Windows API
         # GWL_STYLE = -16
         # WS_CAPTION = 0x00C00000
