@@ -498,12 +498,12 @@ class large_tabs(ctk.CTkFrame):
             return 0
         if self.autofit and len(self.rows) > 0:
             self.available_tab_spaces = int(self.rows[0].winfo_width() / (self.image_width+(3*self.padx)))
-            print(self.available_tab_spaces, self.tabs_per_row)
+            # print(self.available_tab_spaces, self.tabs_per_row)
             if self.available_tab_spaces != self.tabs_per_row:
                 #^ Filling empty spaces
                 if len(self.rows) > 1 and self.available_tab_spaces > self.tabs_per_row:    # if there's more space to add more tabs and there's more than one row
                     for row in range(len(self.rows)-1):     # go through all the rows except the last one
-                        print(f"row: {row}", f"len(self.rows): {len(self.rows)}", f"len(self.tabs): {len(self.tabs)}")
+                        # print(f"row: {row}", f"len(self.rows): {len(self.rows)}", f"len(self.tabs): {len(self.tabs)}")
                         if row >= len(self.rows)-1:          # if the row is the last row, break (we use this as a safety measure, as the size of the rows list might change during the loop)
                             break
                         self.req_tabs = self.available_tab_spaces - len(self.tabs[row])  # calculate the number of tabs that should be added to the row

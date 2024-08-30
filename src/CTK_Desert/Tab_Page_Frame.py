@@ -132,7 +132,7 @@ class Frame(ctk.CTkFrame):
             self.update()
             self.menu_opened = True
 
-        self.pages_dict[self.page_choise].Page_update_manager()
+        self.pages_dict[self.page_choise].update_width()
 
     def tab(self, tab, parent, btn_size=(30,30)):
         directory = self.original_icons_dir if tab == "Workspace" or tab == "Settings" else self.user_icons_dir
@@ -141,17 +141,15 @@ class Frame(ctk.CTkFrame):
         return button
 
     def page_switcher(self, buttonID):
-        if buttonID != self.page_choise and self.pages_dict[buttonID].openable == True:
-            if self.pages_dict[self.page_choise].Leaving("global"):
-                self.pages_dict[self.page_choise].hide_page()
-                directory = self.original_icons_dir if self.page_choise == "Workspace" or self.page_choise == "Settings" else self.user_icons_dir
-                self.buttons[self.page_choise].configure(image=ctk.CTkImage(Image.open(os.path.join(directory, f"{self.page_choise.lower()}_l.png")), Image.open(os.path.join(directory, f"{self.page_choise.lower()}_d.png")), (45,45) if self.page_choise == "Workspace" else (30,30)))
-                self.last_page = self.page_choise
-                # print(self.page_choise, ">>", buttonID)
-                self.page_choise = f'{buttonID}'
-                directory = self.original_icons_dir if buttonID == "Workspace" or buttonID == "Settings" else self.user_icons_dir
-                self.buttons[buttonID].configure(image=ctk.CTkImage(Image.open(os.path.join(directory, f"{buttonID.lower()}_l_s.png")), Image.open(os.path.join(directory, f"{buttonID.lower()}_d_s.png")), (45,45) if buttonID == "Workspace" else (30,30)))
-                self.pages_dict[buttonID].show_page()
+        if buttonID != self.page_choise and self.pages_dict[self.page_choise].hide_page("global"):
+            directory = self.original_icons_dir if self.page_choise == "Workspace" or self.page_choise == "Settings" else self.user_icons_dir
+            self.buttons[self.page_choise].configure(image=ctk.CTkImage(Image.open(os.path.join(directory, f"{self.page_choise.lower()}_l.png")), Image.open(os.path.join(directory, f"{self.page_choise.lower()}_d.png")), (45,45) if self.page_choise == "Workspace" else (30,30)))
+            self.last_page = self.page_choise
+            # print(self.page_choise, ">>", buttonID)
+            self.page_choise = f'{buttonID}'
+            directory = self.original_icons_dir if buttonID == "Workspace" or buttonID == "Settings" else self.user_icons_dir
+            self.buttons[buttonID].configure(image=ctk.CTkImage(Image.open(os.path.join(directory, f"{buttonID.lower()}_l_s.png")), Image.open(os.path.join(directory, f"{buttonID.lower()}_d_s.png")), (45,45) if buttonID == "Workspace" else (30,30)))
+            self.pages_dict[buttonID].show_page()
 
     def update_state_checker(self, event):
         if ((event.width != self.window_width or event.height != self.window_height) and (event.widget == self.window)):
@@ -176,7 +174,7 @@ class Frame(ctk.CTkFrame):
 
     def update_sizes(self): 
         if self.size_event.width != self.window_width:
-            self.pages_dict[self.page_choise].Page_update_manager()
+            self.pages_dict[self.page_choise].update_width()
         else:
             self.pages_dict[self.page_choise].check_scroll_length()
 
@@ -317,7 +315,7 @@ class Frame(ctk.CTkFrame):
 
         MN_split = Main_page_name.split(".")[0] if "." in Main_page_name else Main_page_name
 
-        self.pages_dict[MN_split].hide_page()
+        self.pages_dict[MN_split].hide_page("local.parent")
 
         self.pages_dict[MN_split] = self.subpages_dict[f"{Main_page_name}.{Sub_page_name}"]
         
@@ -333,8 +331,7 @@ class Frame(ctk.CTkFrame):
 
         MN_split = Main_page_name.split(".")[0] if "." in Main_page_name else Main_page_name
 
-        if self.pages_dict[MN_split].Leaving("local"):
-            self.pages_dict[MN_split].hide_page()
+        if self.pages_dict[MN_split].hide_page("local.child"):
 
             if "." in Main_page_name:
                 self.pages_dict[MN_split] = self.subpages_dict[Main_page_name]
