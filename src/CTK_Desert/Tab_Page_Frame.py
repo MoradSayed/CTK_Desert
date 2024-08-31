@@ -141,7 +141,7 @@ class Frame(ctk.CTkFrame):
         return button
 
     def page_switcher(self, buttonID):
-        if buttonID != self.page_choise and self.pages_dict[self.page_choise].hide_page("global"):
+        if buttonID != self.page_choise and self.pages_dict[buttonID].openable and self.pages_dict[self.page_choise].hide_page("global"):
             directory = self.original_icons_dir if self.page_choise == "Workspace" or self.page_choise == "Settings" else self.user_icons_dir
             self.buttons[self.page_choise].configure(image=ctk.CTkImage(Image.open(os.path.join(directory, f"{self.page_choise.lower()}_l.png")), Image.open(os.path.join(directory, f"{self.page_choise.lower()}_d.png")), (45,45) if self.page_choise == "Workspace" else (30,30)))
             self.last_page = self.page_choise
@@ -170,6 +170,7 @@ class Frame(ctk.CTkFrame):
             self.pack(expand = True, fill = "both")
             self.update_sizes()
             self.update_cover.place_forget()
+            self.update()
             self.updating = False
 
     def update_sizes(self): 

@@ -1,6 +1,7 @@
 import tkinter as tk
 import customtkinter as ctk
 from typing import Union, Tuple, Callable
+import threading, time
 
 from .Core  import userChest as Chest
 from .Theme import theme, change_pixel_color
@@ -22,9 +23,8 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.content_frame"
         self.widget_str = str(self)
         self.scrollable = scrollable
         self.openable = True
+        self.opened = False
         self.pickable = False
-        self.last_Known_size = (0, 0)   # the value is set in the Starting method #? holds the dimensions of the page window
-        # self.content_frame_height = 0   #? holds the height of the content frame
 
         self.starting_call_list = []
         self.picking_call_list = []
@@ -63,6 +63,7 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.content_frame"
             self.content_frame.pack(fill="both", expand=True)
 
         self.menu_frame = ctk.CTkFrame(Chest.toolsFrame, fg_color="transparent")
+        self.updating_call_list.append(lambda page=self: threading.Thread(target=self._bg_thread_creator if page.opened else None, daemon=True).start())
 
     def update_width(self): # it updates the whole page (Width & height) + checks the scrollbar status
         if self.scrollable:
@@ -70,29 +71,24 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.content_frame"
             self.Scrollable_canvas.itemconfigure("frame", width=self.winfo_width()) # update frame width
             if self.pickable:
                 self.Updating() # update widgets and user defined functions 
-            # self.update_height()
                 
-    def update_height(self, event, update_scrollbar: bool =True):    #! a delay timer needs to be added here, so that if more than one item is being added the function isn't triggered untill all the items are added
-        # if event and event.height == self.content_frame_height:
-        #     return 1
+    def update_height(self, event):    #! a delay timer needs to be added here, so that if more than one item is being added the function isn't triggered untill all the items are added
         if self.scrollable:
             #? get the height of the contents in the frame
             self.update()
             self.max_height = self.content_frame.winfo_height()
             self.Scrollable_canvas.configure(scrollregion = (0, 0, self.winfo_width(), self.max_height))    # update scroll region
-            if update_scrollbar:
-                self.check_scroll_length()
-        # if event:
-            # self.content_frame_height = self.max_height
+            self.check_scroll_length()
 
     def check_scroll_length(self):
-        self.update()
-        if self.max_height > self.winfo_height():
-            self.Scrollable_canvas.bind_all("<MouseWheel>", lambda event: self.scrolling_action(event)) 
-            self.scroll_bar.pack(fill="y", expand=True)
-        else:
-            self.Scrollable_canvas.unbind_all("<MouseWheel>")
-            self.scroll_bar.pack_forget()
+        if self.opened:
+            self.update()
+            if self.max_height > self.winfo_height():
+                self.Scrollable_canvas.bind_all("<MouseWheel>", lambda event: self.scrolling_action(event)) 
+                self.scroll_bar.pack(fill="y", expand=True)
+            else:
+                self.Scrollable_canvas.unbind_all("<MouseWheel>")
+                self.scroll_bar.pack_forget()
 
     def scrolling_action(self, event):
         if str(event.widget).startswith(self.widget_str):
@@ -111,7 +107,7 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.content_frame"
     def Starting(self): # this function is called only once when the page is opened for the first time
         self.update_width()
         self.update_height(event=None)
-        self.content_frame.bind("<Configure>", lambda event: self.update_height(event)) 
+        self.content_frame.bind("<Configure>", lambda event: self.update_height(event))     #^ after this point the updae_height func shouldn't be called manually
         self.pickable = True
     
         self.menu_frame.place(relx=0.5, rely=0.5, anchor="center")
@@ -119,20 +115,12 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.content_frame"
         for func in self.starting_call_list:
             func()
         self.start_func()
-        self.last_Known_size = (self.parent.winfo_width(), self.parent.winfo_height())  # to set the initial known size of the parent window
-        # self.content_frame_height = self.content_frame.winfo_height()
 
     def Picking(self): 
         self.menu_frame.place(relx=0.5, rely=0.5, anchor="center")
 
         if self.scrollable: 
-            if self.last_Known_size[0] != self.parent.winfo_width():
-                self.update_width()
-            else:
-                self.check_scroll_length() # called it if the height has changed or not. because, it isn't packed anyway so i need to do the check.
-                
-            self.last_Known_size = (self.parent.winfo_width(), self.parent.winfo_height())
-            # self.content_frame_height = self.content_frame.winfo_height()
+            self.check_scroll_length() # called it if the height has changed or not. because, it isn't packed anyway so i need to do the check.
 
         for func in self.picking_call_list:
             func()
@@ -143,18 +131,12 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.content_frame"
         self.update()
         for func in self.updating_call_list:
             func()
-        
-        self.last_Known_size = (self.parent.winfo_width(), self.parent.winfo_height())
-        # self.content_frame_height = self.content_frame.winfo_height()
 
         self.update_func()
 
     def Leaving(self, event) -> bool:
         for func in self.leaving_call_list:
             func()
-
-        self.last_Known_size = (self.parent.winfo_width(), self.parent.winfo_height())
-        # self.content_frame_height = self.content_frame.winfo_height()
 
         state = self.leave_func(event)
         return state and self.openable
@@ -173,6 +155,7 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.content_frame"
             return color
         
     def show_page(self):
+        self.opened = True
         self.pack(expand=True, fill="both")
         if self.pickable:
             self.Picking()
@@ -182,6 +165,7 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.content_frame"
     def hide_page(self, event) -> bool:
         state = self.Leaving(event)
         if state:
+            self.opened = False
             self.pack_forget()
             self.menu_frame.place_forget()
             if self.scrollable:
@@ -194,3 +178,16 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.content_frame"
         self.destroy()
         self.menu_frame.destroy()
 
+    def _bg_thread_creator(self):
+        for page in (*Chest.MainPages.values(), *Chest.SubPages.values()):
+            if page.pickable and page != self:
+                threading.Thread(target=page._bg_update, daemon=True).start()
+
+    def _bg_update(self):
+        openable = self.openable
+        self.openable = False
+        self.place(relx=0, rely=1, relwidth=1)
+        self.update_width()
+        self.place_forget()
+        self.openable = openable
+        
