@@ -139,7 +139,7 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.content_frame"
             func()
 
         state = self.leave_func(event)
-        return state and self.openable
+        return state
            
     def add_menu_button(self, icon_path, command, size = (40, 40)):
         button_image = change_pixel_color(icon_path, colors=theme.icon_norm, return_img=True)
@@ -179,8 +179,8 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.content_frame"
         self.menu_frame.destroy()
 
     def _bg_thread_creator(self):
-        for page in (*Chest.MainPages.values(), *Chest.SubPages.values()):
-            if page.pickable and page != self:
+        for page in {*Chest.MainPages.values(), *Chest.SubPages.values()} - {self}:
+            if page.pickable:
                 threading.Thread(target=page._bg_update, daemon=True).start()
 
     def _bg_update(self):
