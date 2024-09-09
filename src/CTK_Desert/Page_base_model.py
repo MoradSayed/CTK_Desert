@@ -69,8 +69,8 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.content_frame"
         if self.scrollable:
             self.update()
             self.Scrollable_canvas.itemconfigure("frame", width=self.winfo_width()) # update frame width
-            if self.pickable:
-                self.Updating() # update widgets and user defined functions 
+        if self.pickable:
+            self.Updating() # update widgets and user defined functions 
                 
     def update_height(self, event):    #! a delay timer needs to be added here, so that if more than one item is being added the function isn't triggered untill all the items are added
         if self.scrollable:
@@ -81,7 +81,7 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.content_frame"
             self.check_scroll_length()
 
     def check_scroll_length(self):
-        if self.opened:
+        if self.scrollable and self.opened:
             self.update()
             if self.max_height > self.winfo_height():
                 self.Scrollable_canvas.bind_all("<MouseWheel>", lambda event: self.scrolling_action(event)) 
@@ -106,8 +106,9 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.content_frame"
 
     def Starting(self): # this function is called only once when the page is opened for the first time
         self.update_width()
-        self.update_height(event=None)
-        self.content_frame.bind("<Configure>", lambda event: self.update_height(event))     #^ after this point the updae_height func shouldn't be called manually
+        if self.scrollable:
+            self.update_height(event=None)
+            self.content_frame.bind("<Configure>", lambda event: self.update_height(event))     #^ after this point the updae_height func shouldn't be called manually
         self.pickable = True
     
         self.menu_frame.place(relx=0.5, rely=0.5, anchor="center")
