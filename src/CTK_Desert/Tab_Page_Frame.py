@@ -44,7 +44,7 @@ class Frame(ctk.CTkFrame):
         self.padding = 0.02
         self.menu_opened = False
 
-        self.page_choise = page_choise if page_choise != "" else "Workspace"
+        self.page_choise = page_choise if page_choise else "Workspace"
         self.last_page = None
         self.tabs = [("Workspace", 0), ("Settings", 3), ] # used to add tabs after importing its class, the 1 or 0 is used to determine if the tab is created at the beginning automatically or do i want to create it manually later 
         

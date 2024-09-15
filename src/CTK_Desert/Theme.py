@@ -68,7 +68,7 @@ class Theme:
 
     def _get_icon(self, icon_name):
         clr = getattr(self, f"C{icon_name}")
-        icon = change_pixel_color(os.path.join(file_dir, "images", "Icons", f"icons8-{icon_name}-48.png"), clr, return_img=True)
+        icon = change_pixel_color(os.path.join(file_dir, "images", "Icons", f"icons8-{icon_name}-48.png"), clr)
         return icon
 
     def _hex_to_0x(self, hexcolor):

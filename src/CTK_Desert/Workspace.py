@@ -28,7 +28,7 @@ class Workspace(Page_BM):
 
         # Section 1
         self.sectionframe = self.cwdgs.section("Pages")
-        self.cwdgs.section_button(section=self.sectionframe, fg_color="transparent", button_icon=r"C:\Users\Morad\Downloads\icons8-add-96.png", icon_height=30, #! /home/morad/Downloads/icons8-add-48.png
+        self.cwdgs.section_button(section=self.sectionframe, fg_color="transparent", button_icon=os.path.join(self.icons_path, "icons8-add-96.png"), icon_height=30,
                                   button_command=lambda: Chest.Use_SubPage("Workspace", "AddPage"))
         # Section Unit (options)
         self.pages_tabs = large_tabs(self, self.sectionframe, autofit=True)

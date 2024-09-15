@@ -24,8 +24,8 @@ class Settings(Page_BM):
         self.settings_label.pack(fill="x", padx=20, pady=(20, 0))
 
         self.appearance_sec = self.c_wdgts.section("Appearance")
-        self.theme_op, themeVar = self.c_wdgts.ComboBox_unit(self.appearance_sec, "Theme", ["System", "Light", "Dark"], Chest.Get_Prefered_Theme_Mode().capitalize(), Chest.Set_Prefered_Theme_Mode)  #? combobox sends an argument with the chosen value
-        self.Reset_op   = self.c_wdgts.Button_unit(self.appearance_sec, "Add a Section", "+", self.test_func)
+        self.theme_op, themeVar = self.c_wdgts.ComboBox_unit(self.appearance_sec, "Mode", ["System", "Light", "Dark"], Chest.Get_Prefered_Theme_Mode().capitalize(), Chest.Set_Prefered_Theme_Mode)  #? combobox sends an argument with the chosen value
+        self.colors_op   = self.c_wdgts.Button_unit(self.appearance_sec, "Colors", "Browse", self.open_pref)
 
         self.Advanced_Settings = self.c_wdgts.section("Advanced Settings")
         self.Dev_mode, self.WSstate   = self.c_wdgts.CheckBox_unit(self.Advanced_Settings, "Enable Dev mode", self.menu_page_frame.mainpages_dict["Workspace"].openable, self.WS_openable_func)
@@ -35,9 +35,5 @@ class Settings(Page_BM):
     def WS_openable_func(self):
         self.menu_page_frame.mainpages_dict["Workspace"].openable = self.WSstate.get()
 
-    def test_func(self):
-        if self.test_num == 0:
-            self.test_num += 1
-            self.tst1 = self.c_wdgts.section("WELL Well well...")
-            self.tst2 = small_tabs(self, self.tst1)
-        self.tst2.tab(f"img #{random.randint(100000, 999999)}", r"C:\\Users\\Morad\\Downloads\\wallpaperflare.com_wallpaper.jpg")
+    def open_pref(self):
+        os.startfile(os.path.join(Chest.userAssetsDirectory, "preferences.json"), )

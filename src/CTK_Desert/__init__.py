@@ -12,7 +12,7 @@ if Chest._OS == "Windows":
 from .Theme import theme
 
 class Desert(ctk.CTk):
-    def __init__ (self, assets_dir, page_choise="Settings", spin=True, reload_on_save=False):
+    def __init__ (self, assets_dir, page_choise=None, spin=True, reload_on_save=False):
         caller_frame = inspect.stack()[1]
         caller_module = inspect.getmodule(caller_frame[0])
         if caller_module is not None:
@@ -86,6 +86,7 @@ class Desert(ctk.CTk):
         # else:   #! for linux and mac (to be implemented)
         #     pass
 
+        """
         #^ Remove the title bar
         #! will need to edit the Dialog widgit and edit the Frame layout
         # # Constants from the Windows API
@@ -98,7 +99,8 @@ class Desert(ctk.CTk):
         # new_style = current_style & ~WS_CAPTION & ~WS_SYSMENU
         # windll.user32.SetWindowLongW(hwnd, GWL_STYLE, new_style)
         # windll.user32.SetWindowPos(hwnd, 0, 0, 0, 0, 0, 0x27)  # Update the window to apply the changes
-
+        """
+        
     def server_thread(self):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
             server.bind(('localhost', 4831))

@@ -143,7 +143,7 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.content_frame"
         return state
            
     def add_menu_button(self, icon_path, command, size = (40, 40)):
-        button_image = change_pixel_color(icon_path, colors=theme.icon_norm, return_img=True)
+        button_image = change_pixel_color(icon_path, colors=theme.icon_norm)
         button_image = ctk.CTkImage(*button_image, size=size)
         ctk.CTkButton(self.menu_frame, text="", fg_color="transparent", hover_color=Chest.Manager.menu_frame._fg_color, image=button_image, 
                       command=command, ).pack()

@@ -36,7 +36,7 @@ class AddPage(Page_BM):
         self.confirmation_sec =    self.c_wgts.section(pady=5)
         self.confirmation     =    self.c_wgts.Button_unit(self.confirmation_sec, "", "Create Page", self.create_page, height=50, font=(theme.font_B, 17))
         self.Back             =    self.c_wgts.Button_unit(self.confirmation.master, "", "Back", lambda: Chest.Return_SubPage("Workspace", "AddPage"), True,
-                                                           height=50, font=(theme.font_B, 17), fg_color=theme.Ctxt)
+                                                           height=50, font=(theme.font_B, 17), fg_color=theme.Ctxt, lone_widget=True, padx=(0,20))
 
     def on_start(self):
         pass

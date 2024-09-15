@@ -50,16 +50,14 @@ class C_Widgits():
                        hover_color:     Union[str, Tuple[str, str]] = hvr_clr_g(theme.Caccent, "ld") ):
 
             if button_icon != None:
-                if isinstance(button_icon, str):
-                    button_icon = Image.open(button_icon)
-                elif isinstance(button_icon, Image.Image):
-                    pass
-                else:
+                try:
+                    button_icon = change_pixel_color(button_icon, theme.Ctxt)
+                except TypeError:
                     raise TypeError("button_icon should be a path to an image or an Image object.")
-                w, h = button_icon.size[0],button_icon.size[1]
+                w, h = button_icon[0].size
                 r = w/h
                 s = (int(icon_height*r), int(icon_height))
-                button_icon = ctk.CTkImage(button_icon, size=s)
+                button_icon = ctk.CTkImage(*button_icon, size=s)
 
             section_button = ctk.CTkButton(section.master.winfo_children()[0], text=f"{button_text}", font=font, 
                                            fg_color=fg_color, hover_color=color_finder(section.master) if fg_color == "transparent" else hover_color, 
@@ -91,6 +89,7 @@ class C_Widgits():
                     font: tuple = (theme.font, 15),
                     width: int = 140,
                     height: int = 28,
+                    padx: Tuple[int, int] = (0, 0)
                     ):
         
         if not lone_widget:
@@ -111,7 +110,7 @@ class C_Widgits():
             hover_color = hvr_clr_g(fg_color, "ld")
             
         unit_option = ctk.CTkButton(master = master, text = text, font = font, text_color = text_color, width = width, height = height, fg_color = fg_color, hover_color = hover_color, border_width = border_width, border_color = border_color, command = command)
-        unit_option.pack(side="right", fill="x")
+        unit_option.pack(side="right", fill="x", padx=padx)
 
         if invert:  #? Careful that fg_color is now stored in the text_color var, and fg_color is actually "transparent". 
             textclr_onEntry = theme.Ctxt if text_color != theme.Ctxt else theme.Ctxt[::-1]
@@ -277,7 +276,7 @@ class small_tabs(ctk.CTkFrame):
         tab_title.pack(padx=20, side="left", fill="x", expand=True)
 
         if button_icon: #^ make it so that it can be a directory(str), actual_image(Image.Image), custom_image(tuple), or None
-            button_image = change_pixel_color(button_icon, colors=theme.icon_norm, return_img=True)
+            button_image = change_pixel_color(button_icon, colors=theme.icon_norm)
             button_image = ctk.CTkImage(*button_image, size=icon_size)
             ctk.CTkButton(st_frame, text="", fg_color="transparent", hover_color=self.canvas_color, image=button_image, 
                           command=button_command, width=30, height=30).pack(side="right")
@@ -474,8 +473,8 @@ class large_tabs(ctk.CTkFrame):
             image = Image.open(button_icon)
             image = [image, image]
         else:
-            image = change_pixel_color(button_icon, colors=theme.icon_norm, return_img=True)
-        w, h = image[0].size[0],image[0].size[1] # image[0] or image[1] doesn't matter
+            image = change_pixel_color(button_icon, colors=theme.icon_norm)
+        w, h = image[0].size # image[0] or image[1] doesn't matter
         r = w/h
         s = (int(icon_size*r), icon_size)
         image = ctk.CTkImage(image[0], image[1], size=s)
