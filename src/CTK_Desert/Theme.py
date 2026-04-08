@@ -29,6 +29,8 @@ class Theme:
             self.Cpending  : Tuple[str, str] 
             self.icon_norm : Tuple[str, str]
             self.icon_sel  : Tuple[str, str]
+            self.dialog_bg   : Tuple[str, str]
+            self.dialog_blur : Tuple[str, str]
             
             self.font    : str
             self.font_B  : str
@@ -46,7 +48,7 @@ class Theme:
         self.available_themes = [theme for theme in themes]
         theme_data = themes[default_theme]
         for key, value in theme_data.items():
-            name = f"icon{key}" if key.startswith("_") else f"C{key}"
+            name = f"{key[1:]}" if key.startswith("_") else f"C{key}"
             setattr(self, name, tuple(value))
 
         default_font = theme_dict["default_font"]

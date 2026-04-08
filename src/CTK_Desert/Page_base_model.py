@@ -15,7 +15,8 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.content_frame"
                  start_func:  Callable[[None], None] = lambda: None, 
                  pick_func:   Callable[[None], None] = lambda: None, 
                  update_func: Callable[[None], None] = lambda: None, 
-                 leave_func:  Callable[[str], bool] = lambda event: True
+                 leave_func:  Callable[[str], bool] = lambda event: True,
+              #* destroy_func:Callable[[None], None] = lambda: None,
                  ):
         self.parent = Chest.PageParent
         super().__init__(self.parent, fg_color="transparent")
@@ -142,14 +143,14 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.content_frame"
         state = self.leave_func(event)
         return state
            
-    def add_menu_button(self, icon_path, command, size = (40, 40)):
+    def add_menu_button(self, icon_path, command, size = (40, 40), pady = 3):
         button_image = change_pixel_color(icon_path, colors=theme.icon_norm)
         button_image = ctk.CTkImage(*button_image, size=size)
         ctk.CTkButton(self.menu_frame, text="", fg_color="transparent", hover_color=Chest.Manager.menu_frame._fg_color, image=button_image, 
-                      command=command, ).pack()
+                      command=command, ).pack(pady=pady)
 
     def get_scrframe_color(self):
-        color = self.Scrollable_frame._fg_color
+        color = self.content_frame._fg_color
         if color == "transparent":
             return Chest.Manager._fg_color
         else:
@@ -175,7 +176,12 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.content_frame"
         return state
 
     def destroy_page(self):
-        self.scroll_bar.destroy()
+        #TODO: 
+        # for func in self.destroying_call_list:
+        #    func()
+
+        if self.scrollable:
+            self.scroll_bar.destroy()
         self.destroy()
         self.menu_frame.destroy()
 

@@ -1,8 +1,10 @@
 import os, importlib, copy, glob
 import importlib.util
 import customtkinter as ctk
+from tkinter import Event
 from PIL import Image
 import inspect
+from typing import Dict
 
 from .Core import userChest as Chest
 if Chest._OS == "Windows":
@@ -25,6 +27,7 @@ elif Chest._OS == "Linux":
 from .Theme import theme
 from .Top_level_dialog import Dialog
 from .utils import hvr_clr_g
+from .Page_base_model import Page_BM
 
 from .Settings import Settings
 from .Workspace import Workspace
@@ -55,15 +58,16 @@ class Frame(ctk.CTkFrame):
         for module_name in module_names:
             self.ext_pages_importer(module_name)
 
-        self.buttons = {}               # used to save all the tab buttons for later configuration
-        self.mainpages_dict = {}
-        self.subpages_dict = {}
+        self.buttons:Dict[str, ctk.CTkButton] = {}               # used to save all the tab buttons for later configuration
+        self.mainpages_dict:Dict[str, Page_BM] = {}
+        self.subpages_dict:Dict[str, Page_BM] = {}
         # we make it have the same pages as the main pages (as those are the ones that will be displayed), then we make it independent of the main pages so that it show the actual displayed pages
-        self.pages_dict = self.mainpages_dict   
+        self.pages_dict:Dict[str, Page_BM] = self.mainpages_dict   
         
         self.window.update()
         self.window_width = self.window.winfo_width()
         self.window_height = self.window.winfo_height()
+        self.global_updates_list = []   #? used to update any widget that isn't associated with a specific page (ex: Notifications)
 
         self.window.bind("<Configure>", self.update_state_checker)
         self.size_event = None
@@ -151,7 +155,7 @@ class Frame(ctk.CTkFrame):
             self.buttons[buttonID].configure(image=ctk.CTkImage(Image.open(os.path.join(directory, f"{buttonID.lower()}_l_s.png")), Image.open(os.path.join(directory, f"{buttonID.lower()}_d_s.png")), (45,45) if buttonID == "Workspace" else (30,30)))
             self.pages_dict[buttonID].show_page()
 
-    def update_state_checker(self, event):
+    def update_state_checker(self, event: Event):
         if ((event.width != self.window_width or event.height != self.window_height) and (event.widget == self.window)):
             self.size_event = event
             if not self.updating:    
@@ -169,6 +173,7 @@ class Frame(ctk.CTkFrame):
             # print("packing and updating")
             self.pack(expand = True, fill = "both")
             self.update_sizes()
+            self.update()
             self.update_cover.place_forget()
             self.update()
             self.updating = False
@@ -178,7 +183,10 @@ class Frame(ctk.CTkFrame):
             self.pages_dict[self.page_choise].update_width()
         else:
             self.pages_dict[self.page_choise].check_scroll_length()
-
+        
+        for func in self.global_updates_list:
+            func()
+            
         self.window_width = self.size_event.width
         self.window_height = self.size_event.height
 

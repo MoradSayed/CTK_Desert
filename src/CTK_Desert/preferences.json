@@ -14,16 +14,16 @@
                         "#030303"
                     ],
                     "pri": [
-                        "#a3a3a3",
-                        "#3d3d3d"
+                        "#989898",
+                        "#696969"
                     ],
                     "sec": [
-                        "#d4d4d4",
-                        "#080808"
+                        "#c1c1c1",
+                        "#393939"
                     ],
                     "accent": [
-                        "#61bdab",
-                        "#25a188"
+                        "#25a188",
+                        "#61bdab"
                     ],
                     "success": [
                         "#28a745",
@@ -42,28 +42,42 @@
                         "#0056b3"
                     ],
                     "pending": [
-                        "#ffc107",
-                        "#d39e00"
-                    ], 
-                    "_norm": [
+                        "#aaaaaa",
+                        "#636363"
+                    ],
+                    "_icon_norm": [
                         "#4c4c4c",
                         "#b3b3b3"
-                    ], 
-                    "_sel": [
+                    ],
+                    "_icon_sel": [
                         "#399583",
                         "#4dc9b0"
+                    ],
+                    "_dialog_bg": [
+                        "#cecece",
+                        "#2e2e2e"
+                    ],
+                    "_dialog_blur": [
+                        "#000000fa",
+                        "#000000fa"
                     ]
                 }
             }
         ],
-        "default_font": "Space Mono",
-        "fonts":[
+        "default_font": "Eras ITC",
+        "fonts": [
             {
                 "Space Mono": {
-                    "font":    "Space Mono",
-                    "font_B":  "Space Mono Bold",
-                    "font_I":  "Space Mono Italic",
-                    "font_BI": "Space Mono Bold Italic" 
+                    "font": "Space Mono",
+                    "font_B": "Space Mono Bold",
+                    "font_I": "Space Mono Italic",
+                    "font_BI": "Space Mono Bold Italic"
+                },
+                "Eras ITC": {
+                    "font": "Eras Demi ITC",
+                    "font_B": "Eras Bold ITC",
+                    "font_I": "Eras Light ITC",
+                    "font_BI": "Eras Medium ITC"
                 }
             }
         ]

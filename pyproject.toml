@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "CTK_Desert"
-version = "1.0.0a1"
+version = "1.0.0a2"
 dependencies = [
   "customtkinter>=5.2.0,<6.0.0", 
   "Pillow>=9.4.0,<11.0.0", 

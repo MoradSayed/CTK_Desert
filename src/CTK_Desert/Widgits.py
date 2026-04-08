@@ -125,8 +125,8 @@ class C_Widgits():
                       command: Union[Callable[[str], Any], None] = lambda var: None, 
                       lone_widget: bool = False,
                       variable: Union[ctk.Variable, None] = None, 
-                      fg_color: Optional[Union[str, Tuple[str, str]]] = theme.Cpri,
-                      border_color: Optional[Union[str, Tuple[str, str]]] = hvr_clr_g(theme.Cpri, "ld", 30),
+                      fg_color: Optional[Union[str, Tuple[str, str]]] = theme.Csec,
+                      border_color: Optional[Union[str, Tuple[str, str]]] = theme.Csec,#hvr_clr_g(theme.Csec, "ld"),
                       font: Optional[tuple] = (theme.font, 15),
                       width: int = 140,
                       height: int = 28):
@@ -298,7 +298,7 @@ class small_tabs(ctk.CTkFrame):
             tab_cont.pack_propagate(0)
         if self.reorder_btn_state:
             reorder_btn.pack(before=st_frame, side = "left", padx=(0, 20), pady=(0, self.whiteLine_pady*2), fill="y")
-            reorder_btn.bind("<Enter>"   , lambda e, t=st_frame: t.configure(fg_color=theme.Cpri))
+            reorder_btn.bind("<Enter>"   , lambda e, t=st_frame: t.configure(fg_color=theme.Csec))
             reorder_btn.bind("<Leave>"   , lambda e, t=st_frame: t.configure(fg_color="transparent"))
             reorder_btn.bind("<B1-Motion>", lambda e, t=st_frame, b=reorder_btn: self._on_motion(e, t, b))
             reorder_btn.bind("<ButtonRelease-1>", lambda e, Tc=tab_cont, b=reorder_btn: self._on_release(e, Tc, b))
@@ -312,7 +312,7 @@ class small_tabs(ctk.CTkFrame):
                 button = slot.winfo_children()[0]
                 tab = self.tabs[n]
                 button.pack(before=tab, side = "left", padx=(0, 20), pady=(0, self.whiteLine_pady*2), fill="y")
-                button.bind("<Enter>"   , lambda e, t=tab: t.configure(fg_color=theme.Cpri))
+                button.bind("<Enter>"   , lambda e, t=tab: t.configure(fg_color=theme.Csec))
                 button.bind("<Leave>"   , lambda e, t=tab: t.configure(fg_color="transparent"))
                 button.bind("<B1-Motion>", lambda e, t=tab, b=button: self._on_motion(e, t, b))
                 button.bind("<ButtonRelease-1>", lambda e, Tc=slot, b=button: self._on_release(e, Tc, b))
@@ -402,11 +402,10 @@ class large_tabs(ctk.CTkFrame):
         self.autofit = autofit
         self.canvas_color = self.page.get_scrframe_color()
 
+        self.tabs = []
         self.rows = []
-        self.tabs = {}
         self.images = []
-        self.tabs_per_row = 0
-        self.constructed_expander = None
+        self.row_capacity = 1
         self.hidden = False
         self.pending_update = False
 
@@ -415,23 +414,10 @@ class large_tabs(ctk.CTkFrame):
         self.page_function_calls()
 
     def tab(self, text=None, image=None, button_icon=None, icon_size=20, button_command=None):  
-        expander = self.constructor(text, image, button_icon, icon_size, button_command) if self.constructed_expander == None else self.constructed_expander
-
-        row_getter = self.row_frame()
-        if row_getter != 0:
-            self.rows.append(row_getter)
-
+        expander = self.constructor(text, image, button_icon, icon_size, button_command)
+        self.row_frame()
         expander.pack(in_ = self.rows[-1], expand=self.autofit, fill="both", side="left", padx=self.padx, pady=self.pady)
-        
-        if self.constructed_expander == None:
-            if len(self.rows)-1 not in self.tabs:
-                self.tabs[len(self.rows)-1] = []
-            self.tabs[len(self.rows)-1].append(expander)
-            
-        self.update()
-        self.constructed_expander = None
-        if len(self.rows) == 1:
-            self.tabs_per_row = len(self.tabs[0])
+        self.tabs.append(expander)
 
         return expander.winfo_children()[0].winfo_children()
 
@@ -458,7 +444,7 @@ class large_tabs(ctk.CTkFrame):
         canvas.pack()
         canvas.create_image(self.image_width/2, self.image_height/2, anchor="center", image=self.images[-1])
 
-        content = ctk.CTkFrame(tab_cont, fg_color=theme.Cpri, width=canvas.winfo_width())
+        content = ctk.CTkFrame(tab_cont, fg_color=theme.Csec, width=canvas.winfo_width())
         text = ctk.CTkLabel(content, text=f"{text}", font=(theme.font, 20), fg_color="transparent", text_color=theme.Ctxt)
         text.pack(side="left", padx=10, pady=5)
         if button_icon != None:
@@ -478,127 +464,73 @@ class large_tabs(ctk.CTkFrame):
         r = w/h
         s = (int(icon_size*r), icon_size)
         image = ctk.CTkImage(image[0], image[1], size=s)
-        actbtn = ctk.CTkButton(parent[1], text="", image=image, fg_color="transparent", hover_color=theme.Cpri, 
+        actbtn = ctk.CTkButton(parent[1], text="", image=image, fg_color="transparent", hover_color=theme.Csec, 
                                 width=int(icon_size*r), command= button_command)
         actbtn.pack(side="right", padx=5, pady=5)
 
     def row_frame(self):
-        if len(self.rows) == 0 or self.rows[-1].winfo_width() < (self.image_width+(3*self.padx))*(len(self.tabs[len(self.rows)-1])+1): # width of a tab * (number of tabs in the last row + the one that i wanna create):
+        if len(self.tabs) != 0:
+            last_row_count = ((len(self.tabs) -1) % self.row_capacity) + 1     # a trick to change mod output from [i%N = 1,...,N-1,0] to [(i-1%N)+1 = 1,...,N]
+        if len(self.rows) == 0 or self.winfo_width() < (self.image_width+(3*self.padx))*(last_row_count+1): # width of a tab * (number of tabs in the last row + the one that i wanna create):
             row = ctk.CTkFrame(self, fg_color="transparent")
             row.pack(fill="x", expand=True)
+            self.rows.append(row)
         else:
             row = 0
 
         return row
 
-    def ltabs_update(self):
+    def _update_layout(self):
         if self.hidden:
             self.pending_update = True
             return 0
-        if self.autofit and len(self.rows) > 0:
-            self.available_tab_spaces = int(self.rows[0].winfo_width() / (self.image_width+(3*self.padx)))
-            # print(self.available_tab_spaces, self.tabs_per_row)
-            if self.available_tab_spaces != self.tabs_per_row:
-                #^ Filling empty spaces
-                if len(self.rows) > 1 and self.available_tab_spaces > self.tabs_per_row:    # if there's more space to add more tabs and there's more than one row
-                    for row in range(len(self.rows)-1):     # go through all the rows except the last one
-                        # print(f"row: {row}", f"len(self.rows): {len(self.rows)}", f"len(self.tabs): {len(self.tabs)}")
-                        if row >= len(self.rows)-1:          # if the row is the last row, break (we use this as a safety measure, as the size of the rows list might change during the loop)
-                            break
-                        self.req_tabs = self.available_tab_spaces - len(self.tabs[row])  # calculate the number of tabs that should be added to the row
-                        
-                        #* if the required tabs are less than the number of tabs in the next row
-                        if self.req_tabs < len(self.tabs[row+1]):
-                            # print("F1: just taking some of the next row")
-                            self.Shift_up(row)
-                        
-                        #* if the required tabs are equal to the number of tabs in the next row
-                        #* or if the required tabs are more than the number of tabs in the next row and the next row is the last row
-                        elif (self.req_tabs == len(self.tabs[row+1])) or ((self.req_tabs > len(self.tabs[row+1])) and (row+1 == list(self.tabs)[-1])):
-                            # print("F2: taking all of the next row then deleting it and shifting the dict keys")
-                            self.Shift_up_with_delete(row)
+        if not (self.autofit and len(self.rows) > 0):
+            return
+    
+        new_capacity = int(self.winfo_width() / (self.image_width+(3*self.padx)))
+        if new_capacity < self.row_capacity:                    #^ shrinked
+            for row in range(len(self.rows)):                   #? for each row (top to bottom)
+                for n in range(self.row_capacity-1, -1, -1):    #? for each tab in the row (right to left) 
+                    rank = n + (row*self.row_capacity)          #? get tab index in the self.tabs list
+                    if len(self.tabs)-1 < rank:                 #? if the index is out of range (happens in the last row) then
+                        continue                                    #? skip the rest of this current loop iteration and move to the next one
+                    tab = self.tabs[rank]                       #? get the tab object
+                    r_old = rank // self.row_capacity           #? get the old row index
+                    r_new = rank // new_capacity                #? get the new row index
+                    if r_old != r_new:                          #? if the row index has changed then (START MOVING TABS DOWNWARDS)
+                        while len(self.rows)-1 < r_new:                                         #? while the new row index is out of range (happens when we need to create a new row) then
+                            new_frame = ctk.CTkFrame(self, fg_color="transparent")                #? create a new row 
+                            new_frame.pack(fill="x", expand=True)                                   #? pack the new row
+                            self.rows.append(new_frame)                                             #? add it to the list of rows
+                        before_arg = None                                                       #? preset the before_arg to None. incase the new row is empty (doesn't have other tabs)
+                        #// if new_capacity != 1 and len(self.rows[r_new].pack_slaves()) != 0:      #? if the new row isn't empty and the new capacity isn't 1
+                        if (rank+1)%new_capacity!=0 and len(self.tabs)-1>rank:                  #? if it is NOT the last element in the row then and Not the last tab in the tabs list
+                            before_arg = self.tabs[rank+1]                                          #? set the before_arg to the next tab in the list (if exists)
+                        tab.pack(in_=self.rows[r_new], expand=self.autofit, fill="both", side="left", padx=self.padx, pady=self.pady, before = before_arg)  #? pack it in the new row with the before_arg
+                        # print(f"tab {rank}. from row {r_old} to row {r_new}. pack before {rank+1 if before_arg is not None else before_arg}")    #! for debugging
+        elif new_capacity > self.row_capacity:
+            for rank, tab in enumerate(self.tabs):
+                r_old = rank // self.row_capacity
+                r_new = rank // new_capacity
+                if r_old != r_new:
+                # move up
+                    print(f"move up -> r_old : {r_old}, r_new : {r_new}")
+                    tab.pack(in_=self.rows[r_new], expand=self.autofit, fill="both", side="left", padx=self.padx, pady=self.pady)
+                    print("done")
 
-                        #* if the required tabs are more than the number of tabs in the next row and the next row is not the last row
-                        elif (self.req_tabs > len(self.tabs[row+1])) and (row+1 != list(self.tabs)[-1]) :    
-                            # print("F3: taking from the next row and the following ones untill the req_tabs is satisfied, while deleting the empty rows and shifting the dict keys")
-                            while self.req_tabs > 0:
-                                if self.req_tabs >= len(self.tabs[row+1]):
-                                    self.req_tabs -= len(self.tabs[row+1])   # leave this line here, because the next line will change the number of tabs in the next row
-                                    self.Shift_up_with_delete(row)
-                                else:
-                                    self.Shift_up(row)
-                                    self.req_tabs = 0                        # leave this line here, because the shift_up function requires the original value of req_tabs
+            #? method 2 (clear the empty rows) -> Works
+            for r in range(len(self.rows)-1, -1, -1):
+                # print(f"range: {r}")
+                if len(self.rows[r].pack_slaves()) == 0:
+                    self.rows[r].destroy()
+                    self.rows.pop(r)
+                    # print("del")
+                else:
+                    break
+            #?################################
 
-                #^ Removing extra tabs
-                elif len(self.rows) >= 1 and self.available_tab_spaces < self.tabs_per_row:    # if there's more space to add more tabs and there's more than one row
-                    num_of_tabs = ((len(self.rows)-1)*self.tabs_per_row)+len(self.tabs[len(self.rows)-1])  # number of tabs in the rows
-                    for row in range(int(num_of_tabs/self.available_tab_spaces)):     # go through all the rows except the last one
-                        # print(f"Before:\nrows: {self.rows}\ntabs: {self.tabs}\n")
-                        # print(f"row: {row}", f"len(self.rows): {len(self.rows)}", f"len(self.tabs): {len(self.tabs)}")
-                        self.req_tabs = len(self.tabs[row]) - self.available_tab_spaces   # calculate the number of tabs that should be added to the row
-                        if self.req_tabs == 0:
-                            break
-                        # print(f"req_tabs: {self.req_tabs}, empty spaces: {self.available_tab_spaces - len(self.tabs[row+1])}")
-                        
-                        if len(self.rows) == 1: #if we are starting from the last row
-                            # print("R1: only one row is available, Creating a new empty row")
-                            new_frame = ctk.CTkFrame(self, fg_color="transparent")
-                            new_frame.pack(fill="x", expand=True)
-                            self.rows.append(new_frame)
-                            self.tabs[len(self.rows)-1] = []
-                            self.Shift_down(row)
-
-                        #* if the required tabs are less than the number of empty spaces in the next row
-                        elif self.req_tabs <= self.available_tab_spaces - len(self.tabs[row+1]):              #^ Finished
-                            # print("R2: Giving tabs to the next row")
-                            self.Shift_down(row)
-                        
-                        #* if the required tabs are more than the number of tabs in the next row and the next row is the last row
-                        elif (self.req_tabs > self.available_tab_spaces - len(self.tabs[row+1])):
-                            # print("R3: Giving all to the next row and creating a new empty row if this is the last row")
-                            self.Shift_down(row)
-                            if (row+1 == list(self.tabs)[-1]): # if the next row is the last row
-                                new_frame = ctk.CTkFrame(self, fg_color="transparent")
-                                new_frame.pack(fill="x", expand=True)
-                                self.rows.append(new_frame)
-                                self.tabs[len(self.rows)-1] = []
-                        # print(f"After:\nrows: {self.rows}\ntabs: {self.tabs}\n")
-
-            self.tabs_per_row = len(self.tabs[0])
-            
-    def Shift_up(self, row): 
-        if self.req_tabs == 1:
-            self.tabs[row+1][0].pack(in_=self.rows[row], expand=self.autofit, fill="both", side="left", padx=self.padx, pady=self.pady)
-            self.tabs[row].append(self.tabs[row+1][0])
-            del self.tabs[row+1][0]
-        else:
-            for tab in self.tabs[row+1][:self.req_tabs]:
-                tab.pack(in_=self.rows[row], expand=self.autofit, fill="both", side="left", padx=self.padx, pady=self.pady)
-                self.tabs[row].append(tab)
-            del self.tabs[row+1][:self.req_tabs]
-
-    def Shift_down(self, row):
-        if self.req_tabs == 1:
-            before_arg = self.tabs[row+1][0] if len(self.tabs[row+1]) > 0 else None
-            self.tabs[row][-1].pack(in_=self.rows[row+1], expand=self.autofit, fill="both", side="left", padx=self.padx, pady=self.pady, before = before_arg)
-            self.tabs[row+1].insert(0, self.tabs[row][-1])
-            del self.tabs[row][-1]
-        else:
-            for tab in self.tabs[row][:-self.req_tabs-1:-1]:
-                before_arg = self.tabs[row+1][0] if len(self.tabs[row+1]) > 0 else None
-                tab.pack(in_=self.rows[row+1], expand=self.autofit, fill="both", side="left", padx=self.padx, pady=self.pady, before = before_arg)
-                self.tabs[row+1].insert(0, tab)
-            del self.tabs[row][:-self.req_tabs-1:-1]
-
-    def Shift_up_with_delete(self, row): # takes row
-        for tab in self.tabs[row+1]:
-            self.tabs[row].append(tab)
-            tab.pack(in_=self.rows[row], expand=self.autofit, fill="both", side="left", padx=self.padx, pady=self.pady)
-        for key in range(row+1, len(self.tabs)-1):  # from the next row to the second last row
-            self.tabs[key] = self.tabs[key+1]   # shift the dict keys
-        del self.tabs[len(self.tabs)-1]
-        self.rows[row+1].destroy()
-        del self.rows[row+1] 
+        self.row_capacity = new_capacity
+        # print(f"update per row: {self.row_capacity}")   #! for debugging
 
     def show(self):
         """Display the hidden widget and its tabs
@@ -606,13 +538,11 @@ class large_tabs(ctk.CTkFrame):
         if self.hidden:
             self.pack(expand=True, fill="x")
             self.update()
+            self.hidden = False
             if self.pending_update:
                 print("pending updates")
-                self.hidden = False
                 self.pending_update = False
-                self.ltabs_update()
-            else:
-                self.hidden = False
+                self._update_layout()
 
     def hide(self):
         """Hide the Widget and its tabs
@@ -623,8 +553,16 @@ class large_tabs(ctk.CTkFrame):
             self.pack_forget()
             self.parent.configure(height=final_height)
 
+    def _on_start(self):
+        self.row_capacity = int(self.winfo_width() / (self.image_width+(3*self.padx)))
+        if self.row_capacity < len(self.tabs):
+            print(f"Large tabs: _on_start adjustment required")
+            self._update_layout()
+        print(f"creation per row= {self.row_capacity}")
+
     def page_function_calls(self):
-        self.page.updating_call_list.append(self.ltabs_update)
+        self.page.starting_call_list.append(self._on_start)
+        self.page.updating_call_list.append(self._update_layout)
 
 class Banner(ctk.CTkFrame):
     def __init__(self, 

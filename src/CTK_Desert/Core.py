@@ -153,8 +153,9 @@ class Chest():
 
         ctk.set_appearance_mode(f'{new_theme}')
         if self._on_theme_change_jobs != []:
+            _is_dark = (new_theme == "dark")
             for func in self._on_theme_change_jobs:
-                func()
+                func(_is_dark)
 
     def On_Theme_Change(self, func: Callable):
         """Registers a function to be called when the theme is changed
