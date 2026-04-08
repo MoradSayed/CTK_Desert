@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=61.0", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "CTK_Desert"
-version = "1.0.0a2"
+dynamic = ["version"]
 dependencies = [
   "customtkinter>=5.2.0,<6.0.0", 
   "Pillow>=9.4.0,<11.0.0", 
@@ -16,7 +16,7 @@ dependencies = [
   "Send2Trash>=1.8.3,<2.0.0; platform_system == 'Windows'",
 ]
 requires-python = ">=3.8,<4.0"
-license = {file = "LICENSE"} # "LICENSE" is name of the license file, which must be in root of project folder
+license = {file = "LICENSE"}
 authors = [
   { name="Morad Sayed", email="Morad.S.Singer@gmail.com" },
 ]
@@ -37,3 +37,4 @@ classifiers = [
 "CTK_Desert.images" = ["*.ico", "*.png"]
 "CTK_Desert.images.Icons" = ["*.png"]
 
+[tool.setuptools_scm]
