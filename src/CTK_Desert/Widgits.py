@@ -1,4 +1,5 @@
 import customtkinter as ctk
+from tkinter import TclError
 from PIL import Image, ImageTk
 import numpy as np
 from .Core import userChest as Chest
@@ -371,14 +372,16 @@ class small_tabs(ctk.CTkFrame):
             self.slots.insert(target_pos, self.slots.pop(current_pos))
 
             if target_pos+1 < tabs_count:
-                self.slots[target_pos].pack(before=self.slots[target_pos+1], expand=True, fill="both")
+                self.slots[target_pos].pack(before=self.slots[target_pos+1], expand=True, fill="x")
             elif target_pos+1 == tabs_count:
-                self.slots[target_pos].pack(after=self.slots[target_pos-1], expand=True, fill="both")
-            self.tabs[target_pos].pack(in_=self.slots[target_pos], after=self.slots[target_pos].winfo_children()[0], expand=True, fill="x")
-            
-        else:
-            self.tabs[current_pos].pack(in_=self.slots[current_pos], after=self.slots[current_pos].winfo_children()[0], expand=True, fill="x")
-        
+                self.slots[target_pos].pack(after=self.slots[target_pos-1], expand=True, fill="x")
+            try: self.tabs[target_pos].pack(in_=self.slots[target_pos], after=self.slots[target_pos].winfo_children()[0], expand=True, fill="x")
+            except TclError: pass   #? doing this try-except, because i need to evaluate the after argument even if it is gonna through an error. (because if i didn't the reorder button will have an issue on toggling it)
+
+        else:   #? packing to the old position. (used with the manual dragging case - to not leave the tab hanging in the wrong place if outside of the slots range)
+            try: self.tabs[current_pos].pack(in_=self.slots[current_pos], after=self.slots[current_pos].winfo_children()[0], expand=True, fill="x")
+            except TclError: pass   #? doing this try-except, because i need to evaluate the after argument even if it is gonna through an error. (because if i didn't the reorder button will have an issue on toggling it)
+
         self.update()   # update so that if the bind is still holding an old value it lets it out, so that it doesn't cause a swap after the <self.swapping> lock has been unlocked
 
     def _on_start(self):
