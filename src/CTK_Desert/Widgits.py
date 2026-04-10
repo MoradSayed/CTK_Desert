@@ -2,6 +2,7 @@ import customtkinter as ctk
 from tkinter import TclError
 from PIL import Image, ImageTk
 import numpy as np
+from math import ceil
 from .Core import userChest as Chest
 from .Page_base_model import Page_BM
 from .Theme import theme
@@ -395,6 +396,7 @@ class small_tabs(ctk.CTkFrame):
 
 class large_tabs(ctk.CTkFrame):
     def __init__(self, page_class, parent, img_width=500, img_height=300, padx=0, pady=(0, 0), autofit=True):
+        self._started = False
         super().__init__(parent, fg_color="transparent")
         self.page = page_class
         self.parent = parent
@@ -405,8 +407,8 @@ class large_tabs(ctk.CTkFrame):
         self.autofit = autofit
         self.canvas_color = self.page.get_scrframe_color()
 
-        self.tabs = []
-        self.rows = []
+        self.tabs: list[ctk.CTkFrame] = []
+        self.rows: list[ctk.CTkFrame] = []
         self.images = []
         self.row_capacity = 1
         self.hidden = False
@@ -418,8 +420,9 @@ class large_tabs(ctk.CTkFrame):
 
     def tab(self, text=None, image=None, button_icon=None, icon_size=20, button_command=None):  
         expander = self.constructor(text, image, button_icon, icon_size, button_command)
-        self.row_frame()
-        expander.pack(in_ = self.rows[-1], expand=self.autofit, fill="both", side="left", padx=self.padx, pady=self.pady)
+        if self._started:
+            self.row_frame()
+            expander.pack(in_ = self.rows[-1], expand=self.autofit, fill="both", side="left", padx=self.padx, pady=self.pady)
         self.tabs.append(expander)
 
         return expander.winfo_children()[0].winfo_children()
@@ -452,7 +455,7 @@ class large_tabs(ctk.CTkFrame):
         text.pack(side="left", padx=10, pady=5)
         if button_icon != None:
             self.butt0n_icon(["_", content], button_icon, icon_size, button_command)
-        content.pack(expand=True, fill="x", pady=10)
+        content.pack(expand=True, fill="x", pady=(10, 20))
         
         tab_cont.pack()
         return expander
@@ -472,16 +475,18 @@ class large_tabs(ctk.CTkFrame):
         actbtn.pack(side="right", padx=5, pady=5)
 
     def row_frame(self):
-        if len(self.tabs) != 0:
-            last_row_count = ((len(self.tabs) -1) % self.row_capacity) + 1     # a trick to change mod output from [i%N = 1,...,N-1,0] to [(i-1%N)+1 = 1,...,N]
-        if len(self.rows) == 0 or self.winfo_width() < (self.image_width+(3*self.padx))*(last_row_count+1): # width of a tab * (number of tabs in the last row + the one that i wanna create):
-            row = ctk.CTkFrame(self, fg_color="transparent")
-            row.pack(fill="x", expand=True)
-            self.rows.append(row)
+        if self._started:
+            if len(self.tabs) != 0:
+                last_row_count = ((len(self.tabs) -1) % self.row_capacity) + 1     # a trick to change mod output from [i%N = 1,...,N-1,0] to [(i-1%N)+1 = 1,...,N]
+            if len(self.rows) == 0 or self.winfo_width() < (self.image_width+(3*self.padx))*(last_row_count+1): # width of a tab * (number of tabs in the last row + the one that i wanna create):
+                row = ctk.CTkFrame(self, fg_color="transparent")
+                row.pack(fill="x", expand=True)
+                self.rows.append(row)
         else:
-            row = 0
-
-        return row
+            for _ in range(ceil(len(self.tabs) / self.row_capacity)):
+                row = ctk.CTkFrame(self, fg_color="transparent")
+                row.pack(fill="x", expand=True)
+                self.rows.append(row)
 
     def _update_layout(self):
         if self.hidden:
@@ -558,9 +563,10 @@ class large_tabs(ctk.CTkFrame):
 
     def _on_start(self):
         self.row_capacity = int(self.winfo_width() / (self.image_width+(3*self.padx)))
-        if self.row_capacity < len(self.tabs):
-            print(f"Large tabs: _on_start adjustment required")
-            self._update_layout()
+        self.row_frame()
+        for n, expander in enumerate(self.tabs):
+            expander.pack(in_ = self.rows[n//self.row_capacity], expand=self.autofit, fill="both", side="left", padx=self.padx, pady=self.pady)
+        self._started = True
         print(f"creation per row= {self.row_capacity}")
 
     def page_function_calls(self):
