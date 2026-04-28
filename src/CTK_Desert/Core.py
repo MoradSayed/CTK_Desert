@@ -1,3 +1,7 @@
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from .Binder import Binder
+
 import customtkinter as ctk
 import os, platform, json, customtkinter as ctk
 from .Theme import theme
@@ -20,6 +24,7 @@ class Chest():
             self.scaleFactor = windll.shcore.GetScaleFactorForDevice(0) / 100
         else:   #! for linux and mac (to be implemented)
             self.scaleFactor = 1
+        self.Binder: "Binder" = None
             
     def _D__Setup_Chest(self, window, frame):
         from .Tab_Page_Frame import Frame

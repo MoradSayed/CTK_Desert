@@ -2,6 +2,7 @@ import json, os, inspect
 import customtkinter as ctk
 import socket
 import threading, time
+from .Binder import Binder
 from .Core import userChest as Chest
 if Chest._OS == "Windows":
     from ctypes import byref, c_int, sizeof, windll 
@@ -65,8 +66,9 @@ class Desert(ctk.CTk):
             self.App_Theme = ctk.get_appearance_mode()
         self.title_bar_color(theme.TB_hex_clrs[f"{self.App_Theme.lower()}"]) #change the title bar color
         
+        Chest.Binder = Binder(self)
         #? Focus the widget. Or don't, it just deleted itself. And focusing on the void is a hobby, not a function.
-        self.bind_all("<Button-1>", lambda event: event.widget.focus_set() if type(event.widget) != str else None)
+        Chest.Binder.bind("<Button-1>", lambda event: event.widget.focus_set() if type(event.widget) != str else None)
         
         from .Tab_Page_Frame import Frame
         self.Home = Frame(self, usr_assets_dir=assets_dir, page_choise=page_choise)
