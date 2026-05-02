@@ -181,8 +181,6 @@ class Frame(ctk.CTkFrame):
     def update_sizes(self): 
         if self.size_event.width != self.window_width:
             self.pages_dict[self.page_choise].update_width()
-        else:
-            self.pages_dict[self.page_choise].check_scroll_length()
         
         for func in self.global_updates_list:
             func()
@@ -348,6 +346,3 @@ class Frame(ctk.CTkFrame):
                 self.pages_dict[MN_split] = self.mainpages_dict[MN_split]
 
             self.pages_dict[MN_split].show_page()
-
-                
-#### end of the class

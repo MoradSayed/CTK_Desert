@@ -26,17 +26,9 @@ class TilingWindowManager(Page_BM): #* Note: this whole widget is made with it b
     def load_tiles(self, layout_state):
         self.frame.configure(fg_color=theme.Cbg)
         tiles_dict = self.grid_sys.load_layout(layout_state)
-        for page in self.nominated_pages:
-            tile = tiles_dict.get(page.widget_str.split("!")[-1])
-            if tile is None: #? in case there are empty tiles (without assigned pages)
-                continue
-            page.tiling_manager = self
-            page._in_container = tile
-            page.show_page(tiled=True)
-            self.pages.append(page) #? only adds pages that has an assigned tile
-        for page in self.pages:  #? call the starting method after showing all the pages to prevent any width issues due to availability of free space (from pages that didn't load yet)
-            page.Starting()
-            page.lift() #? to prevent any hiding issues (don't know the cause)
+        self._configure_pages(tiles_dict)
+        if self.pickable: #? if tile manager page already started, manually display the pages + their starting methods
+            self._display_pages()
 
     #? Create new tile set #################################################################################
 
@@ -58,19 +50,8 @@ class TilingWindowManager(Page_BM): #* Note: this whole widget is made with it b
 
         elif self.current_stage == 1:
             tiles_dict = self.grid_sys.confirm_layout()
-            for page in self.nominated_pages:
-                tile = tiles_dict.get(page.widget_str.split("!")[-1])
-                if tile is None: #? in case there are empty tiles (without assigned pages)
-                    continue
-                page.tiling_manager = self
-                page._in_container = tile
-                page._use_fixed_width = not tile.tile_expandable
-                page.show_page(tiled=True)
-                self.pages.append(page) #? only adds pages that has an assigned tile
-            for page in self.pages:  #? call the starting method after showing all the pages to prevent any width issues due to availability of free space (from pages that didn't load yet)
-                page.Starting()
-                page.lift() #? to prevent any hiding issues (don't know the cause)
-
+            self._configure_pages(tiles_dict)
+            self._display_pages()
             self.next_btn.pack_forget()
             
             #?send a notfication of the saved item
@@ -79,6 +60,27 @@ class TilingWindowManager(Page_BM): #* Note: this whole widget is made with it b
                                        lambda: subprocess.run("clip", input=layout_data, text=True))
         
         self.current_stage += 1
+
+    #? common methods #################################################################################
+
+    def _configure_pages(self, tiles_dict):
+        for page in self.nominated_pages:
+            tile = tiles_dict.get(page.widget_str.split("!")[-1])
+            if tile is None: #? in case there are empty tiles (without assigned pages)
+                continue
+            page.tiling_manager = self
+            page._in_container = tile
+            page._use_fixed_width = not tile.tile_expandable
+            self.pages.append(page) #? only adds pages that has an assigned tile
+            page.lift()
+
+    def _display_pages(self):
+        """Single use method to display the pages after configuring them. so that if the tiling manager has already started pages don't miss their Starting call"""
+        for page in self.pages:
+            page.show_page(tiled=True)
+        for page in self.pages:  #? call the starting method after showing all the pages to prevent any width issues due to excessive availability of free space (from pages that didn't load yet)
+            page.Starting()
+            #// page.lift() #? to prevent any hiding issues (don't know the cause)
 
     #^ Tiling Manager methods #############################################################################
 
@@ -89,13 +91,10 @@ class TilingWindowManager(Page_BM): #* Note: this whole widget is made with it b
         return n==keys
     
     def update_width(self):
-        for page in self.pages:
-            page.update_width()
+        if self.pickable: #? avoids redundant updates if the page is currently starting (page's initial width gets set in the Starting method)
+            for page in self.pages:
+                page.update_width()
         super().update_width()
-
-    def check_scroll_length(self):
-        for page in self.pages:
-            page.check_scroll_length()
 
     def show_page(self):
         for page in self.pages:

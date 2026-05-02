@@ -10,6 +10,7 @@ import threading, time
 from .Core  import userChest as Chest
 from .Theme import theme, change_pixel_color
 from .utils import hvr_clr_g
+from .Minimal_scrollbar import Scrollbar
 
 class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.content_frame"
     def __init__(self, 
@@ -42,10 +43,6 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.content_frame"
         self._managed_by_tile:bool = False
         self.tiling_manager:"TilingWindowManager" = None
 
-        self._velocity = 0.0
-        self._scrolling = False
-        self._mouse_bound = False
-
         self.starting_call_list = []
         self.picking_call_list = []
         self.updating_call_list = []
@@ -76,98 +73,68 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.content_frame"
                                               background_corner_colors=(theme.Cbg, theme.Cbg, (color), (color)))
             self.content_frame.pack(fill="x")
 
+            #^ self.Scrollable_canvas.bind("<FocusIn>", lambda event: print(f"in {self.widget_str.split('!')[-1]}"))
+            #^ self.Scrollable_canvas.bind("<FocusOut>", lambda event: print(f"out of {self.widget_str.split('!')[-1]}"))
             if scrollbar_inside:
-                self.scroll_bar_frame = ctk.CTkFrame(self, fg_color=hvr_clr_g(color, "ld"), background_corner_colors=((color), None, None, (color)), width=20)
-                self.scroll_bar_frame.pack_propagate(0)
-                self.scroll_bar = ctk.CTkScrollbar(self.scroll_bar_frame, orientation="vertical", command=self.Scrollable_canvas.yview, 
-                                                   button_color=theme.Csec, button_hover_color=theme.Cpri, 
-                                                   fg_color="transparent")
-                self.scroll_bar.pack(fill="y", expand=True, pady=5)
+                self.scroll_bar = Scrollbar(self.Scrollable_canvas, self, color=hvr_clr_g(color, "ld"), side="e",
+                                                command=self.Scrollable_canvas.yview)
             else: 
-                self.scroll_bar = ctk.CTkScrollbar(Chest.Manager.scroll_bar_frame, orientation="vertical", 
-                                                command=self.Scrollable_canvas.yview, button_color=color, button_hover_color=hvr_clr_g(color, "ld"))
+                self.scroll_bar = Scrollbar(Chest.Manager.scroll_bar_frame, self, color=color, auto_hide=False, subpage_style=False,
+                                                command=self.Scrollable_canvas.yview)
             self.Scrollable_canvas.config(yscrollcommand=self.scroll_bar.set)
         else:
             self.content_frame = ctk.CTkFrame(self, fg_color=color, bg_color=theme.Cbg)
             self.content_frame.pack(fill="both", expand=True)
 
         self.menu_frame = ctk.CTkFrame(Chest.toolsFrame, fg_color="transparent")
+
+        self._queue = []  # list of (name, task)
+        self._busy = False
+        self._current = None
+
+    def _update_queue(func):
+        def wrapper(self, *args, **kwargs):
+            already_queued = any(name == func.__name__ for name, _ in self._queue)
+            currently_running = self._current == func.__name__
+
+            if already_queued or currently_running:
+                return
+
+            self._queue.append((func.__name__, lambda: func(self, *args, **kwargs)))
+
+            if self._busy:
+                return
+
+            self._busy = True
+            while self._queue:
+                name, task = self._queue.pop(0)
+                self._current = name
+                task()
+            self._busy = False
+            self._current = None
+
+        return wrapper
         
+    @_update_queue
     def update_width(self): # it updates the whole page (Width & height) + checks the scrollbar status
         #todo: replace this check with something better to allow switching between fixed and non fixed width without any issues (ex. if the page starts as a page then switches to a tile it won't update its width because the pickable is already true)
-        if self._use_fixed_width and self.pickable:  # skip width updates if page width is fixed and the page has already started (initial width is set)
+        if self._managed_by_tile and self._use_fixed_width and self.pickable:  # skip width updates if page width is fixed and the page has already started (initial width is set)
             return
         
         if self.scrollable:
             self.update()
-            if self.scrollbar_inside and self.scroll_bar_frame.winfo_ismapped():
-                #* print(f"{self.scroll_bar_frame.winfo_ismapped()=} from {self.widget_str.split('!')[-1]}")
-                width = self.winfo_width()-self.scroll_bar_frame.winfo_width()
-            else:
-                width = self.winfo_width()
-            self.Scrollable_canvas.itemconfigure("frame", width=width) # update frame width
+            self.Scrollable_canvas.itemconfigure("frame", width=self.winfo_width()) # update frame width
         if self.pickable and not self._managed_by_tile:     #? if managed by a tile manager. don't update yourself, tile manager will call your updating method for you
             self.Updating() # update widgets and user defined functions 
                 
-    """
-    scrollbar update:
-    -accounted for
-    1. on content frame change (due to adding or removing widgets inside / vertically shrinking growing widgets) - using content_frame.bind<configure>
-    2. main window height resizing (no width change case) 
-    ---
-    -unaccounted for
-    3. main window height resizing with width change (while having static - non shrinking/growing widgets): will not `check_scroll_bar`
-    """
+    @_update_queue
     def update_height(self, event):    #! a delay timer needs to be added here, so that if more than one item is being added the function isn't triggered untill all the items are added
         """due to vertical placement changes to the content of the frame"""
-        #* print(f"triggered from {self.widget_str.split('!')[-1]}")
         if self.scrollable:
             #? get the height of the contents in the frame
             self.update()
             self.max_height = self.content_frame.winfo_height()
             self.Scrollable_canvas.configure(scrollregion = (0, 0, self.winfo_width(), self.max_height))    # update scroll region
-            self.check_scroll_length()
-
-    def check_scroll_length(self):
-        """due to changes in the viewport height (main window resizing) + calls from update_height"""
-        if self.scrollable and self.opened:
-            self.update()
-            if self.max_height > self.winfo_height():
-                if not self._mouse_bound:
-                    self._mouse_bound = True
-                    Chest.Binder.bind("<MouseWheel>", self.scrolling_action)
-                    if self.scrollbar_inside:
-                        self.content_frame.configure(background_corner_colors=(theme.Cbg, (self.color), (self.color), (self.color)))
-                        self.scroll_bar_frame.pack(side="right", fill="y", before=self.Scrollable_canvas)
-                        self.update_width()
-                    else:
-                        self.scroll_bar.pack(fill="y", expand=True, pady=5)
-            else:
-                Chest.Binder.unbind("<MouseWheel>", self.scrolling_action)
-                if self.scrollbar_inside:
-                    self.content_frame.configure(background_corner_colors=(theme.Cbg, theme.Cbg, (self.color), (self.color)))
-                    self.scroll_bar_frame.pack_forget()
-                    self.update_width()
-                else:
-                    self.scroll_bar.pack_forget()
-                self._mouse_bound = False
-
-    def scrolling_action(self, event):
-        if str(event.widget).startswith(self.widget_str+"."):
-            self._velocity += -1 * (event.delta / 120) * 60     #? (-/+)1 * 60
-            self._velocity = max(-200, min(200, self._velocity))
-            if not self._scrolling:
-                self._scrolling = True
-                self._animate()
-
-    def _animate(self):
-        if abs(self._velocity) < 0.5:
-            self._velocity = 0
-            self._scrolling = False
-            return
-        self.Scrollable_canvas.yview_scroll(int(self._velocity), "units")
-        self._velocity *= 0.85
-        self.after(16, self._animate)
 
     def get_pf(self):
         return self.content_frame
@@ -190,9 +157,6 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.content_frame"
     def Picking(self): 
         if not self._managed_by_tile:
             self.menu_frame.place(relx=0.5, rely=0.5, anchor="center")
-
-        if self.scrollable: 
-            self.check_scroll_length() # called it if the height has changed or not. because, it isn't packed anyway so i need to do the check.
 
         for func in self.picking_call_list:
             func()
@@ -259,13 +223,6 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.content_frame"
             self.pack_forget()
             if not self._managed_by_tile:
                 self.menu_frame.place_forget()
-            if self.scrollable:
-                Chest.Binder.unbind("<MouseWheel>", self.scrolling_action)
-                if self.scrollbar_inside:
-                    self.scroll_bar_frame.pack_forget()
-                else:
-                    self.scroll_bar.pack_forget()
-                self._mouse_bound = False
         return state if not self._managed_by_tile else True
 
     def destroy_page(self):
@@ -279,8 +236,8 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.content_frame"
         self.menu_frame.destroy()
 
     def _bg_thread_creator(self):
-        for page in {*Chest.MainPages.values(), *Chest.SubPages.values()} - {self}:
-            if page.pickable:
+        for page in {*Chest.MainPages.values(), *Chest.SubPages.values()} - {self}:     #todo: (only in TWM) subtract self.pages with self (if they exist as a main or sub page)
+            if page.pickable:                                                           #todo: (Global) add a `and not self._managed_by_tile` check, so that if it is managed by a tile manager don't update it from its own thread, since the tile manager will call its updating method for it.
                 threading.Thread(target=page._bg_update, daemon=True).start()
 
     def _bg_update(self):
@@ -290,4 +247,3 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.content_frame"
         self.update_width()
         self.place_forget() if not self._managed_by_tile else self.pack_forget()
         self.openable = openable
-        
