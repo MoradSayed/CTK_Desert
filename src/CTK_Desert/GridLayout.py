@@ -1,9 +1,7 @@
 import customtkinter as ctk
-import subprocess, time
 import numpy as np
 from collections import defaultdict
 
-from .Page_base_model import Page_BM
 from .Core import userChest as Chest
 from .Theme import theme
 from .utils import hvr_clr_g
@@ -24,7 +22,7 @@ class GridLayoutEditor:
         self.rows_minsize: np.ndarray           #? holds the minimum size of each row as set by the user (0 if not set).
         self.cols_minsize: np.ndarray           #? holds the minimum size of each column as set by the user (0 if not set).
         self.grid_map: np.ndarray               #? a 2D boolean array that holds the state of each cell in the grid (True if occupied by a page frame, False if empty). This is used to prevent overlapping frames and to manage the layout state.
-        
+
         self._rows = defaultdict(set)   #? holds the frames' references in each row
         self._cols = defaultdict(set)   #? holds the frames' references in each column
         #? ^^^^ to get all the result widgets created regardless of row/column use `set().union(*self._rows.values())`
@@ -56,7 +54,7 @@ class GridLayoutEditor:
         label.configure(text=f"{value}")
         setattr(self, attr, value)
 
-        #? spawn hoverable_frames    
+        #? spawn hoverable_frames
         self._process_cells()
 
         self.rows_slider_frame.lift()
@@ -99,7 +97,7 @@ class GridLayoutEditor:
                     self.grid_placeholders[r].append(self._cell_frame(r, c))
 
     def _cell_frame(self, r: int, c: int) -> ctk.CTkFrame:
-        cell_btn = ctk.CTkFrame(self.parent, width=1, height=1, fg_color=theme.Cbg, bg_color=theme.Cbg, corner_radius=0)    #? width/height are set to 1. because grid can only shrink to the largest frame size only (why we set all frame sizes to 1) 
+        cell_btn = ctk.CTkFrame(self.parent, width=1, height=1, fg_color=theme.Cbg, bg_color=theme.Cbg, corner_radius=0)    #? width/height are set to 1. because grid can only shrink to the largest frame size only (why we set all frame sizes to 1)
         cell_btn.bind("<Enter>",    lambda e, p=cell_btn, row=r, col=c: self._enter_callback(p, row, col))
         cell_btn.bind("<Leave>",    lambda e, p=cell_btn, row=r, col=c: self._leave_callback(p, row, col))
         cell_btn.bind("<Button-1>", lambda e, row=r, col=c:       self._btn_1_callback(row, col))
@@ -146,7 +144,7 @@ class GridLayoutEditor:
             self.grid_map = np.zeros((self.req_rows, self.req_columns), dtype=bool)
         # print(f"Cell ({r}, {c}) callback executed")
         if self.pConfig_attached is None:
-            page_config_frame = ctk.CTkFrame(self.parent, width=1, height=1, fg_color=theme.Cbg)    #? width/height are set to 1. because grid can only shrink to the largest frame size only (why we set all frame sizes to 1) 
+            page_config_frame = ctk.CTkFrame(self.parent, width=1, height=1, fg_color=theme.Cbg)    #? width/height are set to 1. because grid can only shrink to the largest frame size only (why we set all frame sizes to 1)
             page_config_frame.tile_expandable = True     #? True if we want the weigth to be 1 and false for 0 (fixed)
             page_config_frame.grid_state_frame = ctk.CTkFrame(page_config_frame, fg_color="transparent")
             page_config_frame.grid_state_label = ctk.CTkLabel(page_config_frame.grid_state_frame, fg_color="transparent", text="Expandable", font=(theme.font_B, 20))
@@ -171,7 +169,7 @@ class GridLayoutEditor:
             self.pConfig_attached.grid_state_frame.place(relx=0.5, rely=0.5, anchor="center")
             self.pConfig_attached.grid_state_label.pack(side="left", padx=(10, 10))
             self.pConfig_attached.configure(fg_color=theme.Csec)
-            
+
             self._rows[new[0]].add(self.pConfig_attached); self._cols[new[1]].add(self.pConfig_attached)
             self.pConfig_attached.tile_span = (new[2], new[3])   #? (rowspan, columnspan)
 
@@ -181,7 +179,7 @@ class GridLayoutEditor:
             self.pConfig_attached.grid_state_label.bind("<Button-3>", lambda e, tile=self.pConfig_attached: self._destroy_tile(tile))
 
             self.grid_placeholders[self.start[0]][self.start[1]].configure(fg_color=theme.Cbg)
-            
+
             self.pConfig_attached = None
             self.start, self.end = None, None
 
@@ -197,7 +195,7 @@ class GridLayoutEditor:
             if rowspan > 1:
                 tile.grid_state_entryH.configure(state="disabled", fg_color=theme.Csec)
             else:
-                if self.rows_minsize[row]: 
+                if self.rows_minsize[row]:
                     tile.grid_state_entryH.delete(0, "end")
                     tile.grid_state_entryH.insert(0, int(self.rows_minsize[row]*Chest.scaleFactor))
                     tile.configure(height=self.rows_minsize[row])
@@ -209,7 +207,7 @@ class GridLayoutEditor:
             if colspan > 1:
                 tile.grid_state_entryW.configure(state="disabled", fg_color=theme.Csec)
             else:
-                if self.cols_minsize[col]: 
+                if self.cols_minsize[col]:
                     tile.grid_state_entryW.delete(0, "end")
                     tile.grid_state_entryW.insert(0, int(self.cols_minsize[col]*Chest.scaleFactor))
                     tile.configure(width=self.cols_minsize[col])
@@ -218,7 +216,7 @@ class GridLayoutEditor:
                     tile.grid_state_entryW._entry_focus_out()
                     tile.configure(width=1)
 
-                    
+
         else:                           #? if it was fixed make it expandable
             tile.tile_expandable = True
             tile.grid_state_label.configure(text="Expandable")
@@ -228,7 +226,7 @@ class GridLayoutEditor:
             tile.pack_propagate(True)
             tile.configure(width=1, height=1)
 
-            #? when switching to expandable - reset the row/column if there are no other fixed frames in the same row/column 
+            #? when switching to expandable - reset the row/column if there are no other fixed frames in the same row/column
             if all(t.tile_expandable for t in self._rows[row] if t.tile_span[0] == 1):
                 self.rows_minsize[row] = 0
                 self.parent.grid_rowconfigure(row, weight=1, minsize=0, uniform="rows")
@@ -244,7 +242,7 @@ class GridLayoutEditor:
         event_frame:ctk.CTkFrame = event_entry.master.master
         row, col, rowspan, colspan = self._get_info(event_frame)
         # print(f"Entry focus out with value: '{value}'")
-        
+
         if value.isdigit():
             value = int(value)/Chest.scaleFactor
             if placeholder_txt == "width":
@@ -312,7 +310,7 @@ class GridLayoutEditor:
 
     #^ Stage 2: ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
-    def tiles_assignment_UI(self, p_names:list[Page_BM]=None):
+    def tiles_assignment_UI(self, p_names:list["str"]=None):
         label_text_placeholder = "Which Page?"
         tiles = set().union(*self._rows.values())
         if p_names is None:
@@ -343,10 +341,10 @@ class GridLayoutEditor:
             tile.unbind("<Button-1>"); tile.grid_state_label.unbind("<Button-1>")
             tile.grid_state_frame.place_forget()
             tiles[tile.grid_state_label.cget("text")]=tile
-        
+
         return tiles
 
-    def save_layout(self):        
+    def save_layout(self):
         layout_state = {
             "grid": {
                 "rows": self.req_rows,
@@ -370,18 +368,18 @@ class GridLayoutEditor:
             }
             layout_state["tiles"].append(tile_state)
         return layout_state
-    
+
     def load_layout(self, layout_state):
         self.req_rows = layout_state["grid"]["rows"]
         self.req_columns = layout_state["grid"]["columns"]
         self.gap = layout_state["grid"]["gap"]
         self.parent.grid_rowconfigure(list(range(self.req_rows)), weight=1, uniform="rows")
         self.parent.grid_columnconfigure(list(range(self.req_columns)), weight=1, uniform="cols")
-        
+
         tiles = {}
         for tile_state in layout_state["tiles"]:
-            tile = ctk.CTkFrame(self.parent, width=1, height=1, fg_color=theme.Cbg)    #? width/height are set to 1. because grid can only shrink to the largest frame size only (why we set all frame sizes to 1) 
-            tile.grid(row=tile_state["row"], column=tile_state["column"], rowspan=tile_state["rowspan"], columnspan=tile_state["columnspan"], sticky="nsew", 
+            tile = ctk.CTkFrame(self.parent, width=1, height=1, fg_color=theme.Cbg)    #? width/height are set to 1. because grid can only shrink to the largest frame size only (why we set all frame sizes to 1)
+            tile.grid(row=tile_state["row"], column=tile_state["column"], rowspan=tile_state["rowspan"], columnspan=tile_state["columnspan"], sticky="nsew",
                         padx = (self.gap//2 if tile_state["column"]!=0 else 0, self.gap//2 if tile_state["column"]+tile_state["columnspan"]!=self.req_columns else 0),
                         pady = (self.gap//2 if tile_state["row"]!=0 else 0, self.gap//2 if tile_state["row"]+tile_state["rowspan"]!=self.req_rows else 0))
             if not tile_state["expandable"]:
@@ -398,7 +396,7 @@ class GridLayoutEditor:
                 tile.tile_expandable = True
 
             tiles[tile_state["page"]]=tile
-            
+
         return tiles
 
 
@@ -407,12 +405,12 @@ class GridLayoutEditor:
 # --- FIXED GRID CONFIGURATION ---
 # 1. Use weight=0 to prevent the track from growing or shrinking.
 # 2. Use minsize to define the strict pixel width/height.
-parent.grid_columnconfigure(index=1, weight=0, minsize=50) 
+parent.grid_columnconfigure(index=1, weight=0, minsize=50)
 
 # --- FIXED WIDGET PLACEMENT ---
 # 1. Use sticky="nsew" so the widget stretches to the minsize of the track.
 # 2. Set the physical width/height in the widget constructor.
-# 3. Use grid_propagate(False) on the widget if you want to prevent 
+# 3. Use grid_propagate(False) on the widget if you want to prevent
 #    internal children from "pushing" the fixed size larger.
 fixed_frame = ctk.CTkFrame(parent, width=50)
 fixed_frame.grid(row=0, column=1, sticky="nsew")

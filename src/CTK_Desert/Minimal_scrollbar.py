@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Literal
 if TYPE_CHECKING:
-    from .Page_base_model import Page_BM
+    from .Page_base_model import Tile_BM
 
 import customtkinter as ctk
 from .Core import userChest as Chest
@@ -8,9 +8,9 @@ from .Theme import theme
 from .utils import hvr_clr_g
 
 class Scrollbar(ctk.CTkFrame):
-    def __init__(self, parent, page:"Page_BM", color: tuple[str, str], command, 
+    def __init__(self, parent, page:"Tile_BM", color: tuple[str, str], command,
                  subpage_style: bool = True, side:Literal['e', 'w'] = 'e', auto_hide: bool = True):
-        
+
         from .Notifications import Notifications
         self.notifier = Notifications()
 
@@ -38,7 +38,7 @@ class Scrollbar(ctk.CTkFrame):
 
         self.bind("<Enter>", lambda e: self.configure(fg_color=self.hover_color))
         self.bind("<Leave>", lambda e: self.configure(fg_color=color))
-        if subpage_style: 
+        if subpage_style:
             self.lift()
             if   self._side == "w": self._relx = 0.0
             elif self._side == "e": self._relx = 1.0
@@ -51,7 +51,7 @@ class Scrollbar(ctk.CTkFrame):
         page.starting_call_list.append(lambda: setattr(self, "_started", True))
         page.picking_call_list.append(self._restore_state)
         page.leaving_call_list.append(self._page_leaving)
-        
+
         self._initial_y = None
         self.bind("<B1-Motion>", self._on_drag)
         self.bind("<ButtonRelease-1>", lambda e: setattr(self, "_initial_y", None))
@@ -66,11 +66,11 @@ class Scrollbar(ctk.CTkFrame):
         if not self._started:
             return
         # print("scrollbar set called with ", start, end, "from", self.page.widget_str.split("!")[-1])
-        
+
         self._start_value = float(start)
         self._end_value = float(end)
         self.rel_height = self._end_value - self._start_value
-        
+
         if self.rel_height == 1.0:
             self._placed = False
             self._place_check()
@@ -78,7 +78,7 @@ class Scrollbar(ctk.CTkFrame):
                 Chest.Binder.unbind("<MouseWheel>", self.scrolling_action)
                 self._mouse_bound = False
             return
-        
+
         if self._subpage_style:
             if self._start_value == 0.0: self.configure(background_corner_colors=(theme.Cbg if self._side == "w" else self.color, theme.Cbg if self._side == "e" else self.color, self.color, self.color))
             elif self._end_value == 1.0: self.configure(background_corner_colors=(self.color, self.color, theme.Cbg if self._side == "e" else self.color, theme.Cbg if self._side == "w" else self.color))
@@ -88,7 +88,7 @@ class Scrollbar(ctk.CTkFrame):
         if not self._mouse_bound:
             self._mouse_bound = True
             Chest.Binder.bind("<MouseWheel>", self.scrolling_action)
-    
+
     def get(self):
         return self._start_value, self._end_value
 

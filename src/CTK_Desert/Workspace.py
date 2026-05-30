@@ -1,16 +1,32 @@
 import customtkinter as ctk
-import os, inspect
+import os
+import inspect
 
 from .Core import userChest as Chest
-from .Page_base_model import Page_BM
+from .Page_base_model import Page_BM, Tile_BM
 from .Theme import theme
 from .Widgits import C_Widgits, large_tabs
 from .utils import color_finder
 
-from .AddPage import AddPage
+
+class Workspace(Page_BM):
+    def __init__(self):
+        layout_state: dict = {'grid': {'rows': 1, 'columns': 1, 'gap': 11.2},
+                              'tiles': [{'row':         0,
+                                         'column':       0,
+                                         'rowspan':      1,
+                                         'columnspan':   1,
+                                         'page': 'workspacetile',
+                                         'expandable': True,
+                                         'width': 1,
+                                         'height': 1}]}
+        super().__init__(layout_state)
+        self.add_tile(WorkspaceTile())
 
 # don't ever pack the frame, it will be packed in the Tab_Page_Frame.py
-class Workspace(Page_BM):
+
+
+class WorkspaceTile(Tile_BM):
     def __init__(self):
         super().__init__(scrollable=True, start_func=self.on_start)
         self.menu_page_frame = Chest.Manager
@@ -19,31 +35,39 @@ class Workspace(Page_BM):
         self.frame_clr = color_finder(self.frame)
         # self.add_menu_button(r"C:\Users\Morad\Downloads\icons8-reload-64.png", lambda: Chest.reload_page("Workspace")) #! need to move the image to the library if i am gonna use it
 
+        #todo: uncomment after refactoring the subpage system to work with the new page system (#SP1)
+        # from .AddPage import AddPage
+        # Chest.Store_SubPage("Workspace", AddPage)
+        # from .PageEditor import TiledEditor
+        # Chest.Store_SubPage("Workspace", TiledEditor)
+
         self.icons_path = Chest.Manager.original_icons_dir
-        Chest.Store_SubPage("Workspace", AddPage)
         self.cwdgs = C_Widgits(self, self.frame)
 
-        self.workspace_label = ctk.CTkLabel(self.frame, text="Workspace", font=(theme.font_B, 40))
+        self.workspace_label = ctk.CTkLabel(
+            self.frame, text="Workspace", font=(theme.font_B, 40))
         self.workspace_label.pack(fill="x", padx=20, pady=(20, 0))
 
         # Section 1
         self.sectionframe = self.cwdgs.section("Pages")
         self.cwdgs.section_button(section=self.sectionframe, fg_color="transparent", button_icon=os.path.join(self.icons_path, "icons8-add-96.png"), icon_height=30,
-                                  button_command=lambda: Chest.Use_SubPage("Workspace", "AddPage"))
+                                  )# button_command=lambda: Chest.Use_SubPage("Workspace", "AddPage"))      #todo: uncomment after refactoring (#SP1)
+        self.cwdgs.section_button(section=self.sectionframe, fg_color="transparent", button_icon=os.path.join(self.icons_path, "icons8-edit-64.png"), icon_height=30,
+                                  )# button_command=lambda: Chest.Use_SubPage("Workspace", "TiledEditor"))  #todo: uncomment after refactoring (#SP1)
         # Section Unit (options)
         self.pages_tabs = large_tabs(self, self.sectionframe, autofit=True)
-
 
     def on_start(self):
         for page in [page for page in self.menu_page_frame.mainpages_dict if page not in ["Workspace", "Settings"]]:
             tab = self.pages_tabs.tab(page, os.path.join(os.path.abspath(os.path.join(self.icons_path, os.pardir)), "preview_window.png"),
-                                        button_icon=os.path.join(self.icons_path, "icons8-right-arrow-64.png"),
-                                        button_command=lambda page_name = page: self.go(page_name))
-            self.pages_tabs.butt0n_icon(tab, button_icon=os.path.join(self.icons_path, "icons8-edit-64.png"), 
-                                        button_command=lambda page_name = page: self.edit(page_name))
-            self.pages_tabs.butt0n_icon(tab, button_icon=os.path.join(self.icons_path, "icons8-delete-64.png"), override_color=True, 
-                                        button_command=lambda page_name = page: self.delete(page_name))            
-            
+                                      button_icon=os.path.join(
+                                          self.icons_path, "icons8-right-arrow-64.png"),
+                                      button_command=lambda page_name=page: self.go(page_name))
+            self.pages_tabs.butt0n_icon(tab, button_icon=os.path.join(self.icons_path, "icons8-edit-64.png"),
+                                        button_command=lambda page_name=page: self.edit(page_name))
+            self.pages_tabs.butt0n_icon(tab, button_icon=os.path.join(self.icons_path, "icons8-delete-64.png"), override_color=True,
+                                        button_command=lambda page_name=page: self.delete(page_name))
+
     def go(self, page_name):
         if Chest.MainPages[page_name] is Chest.Displayed_Pages[page_name]:
             Chest.Switch_Page(page_name)
@@ -56,11 +80,11 @@ class Workspace(Page_BM):
     def edit(self, page_name):
         dir = inspect.getmodule(Chest.MainPages[page_name]).__file__
         os.system('code '+str(dir))
-                    
+
     def delete(self, page_name):
         if f"{page_name}+deletion" not in Chest.Dialog_Manager.dialogs:
             # print("creating a new dialog frame")
-            Chest.Dialog_Manager.new(tag=f"{page_name}+deletion", icon="danger", text=f"Are you sure you want to delete {page_name}?", button_text="Delete", 
+            Chest.Dialog_Manager.new(tag=f"{page_name}+deletion", icon="danger", text=f"Are you sure you want to delete {page_name}?", button_text="Delete",
                                      button_function=lambda event: dialog_func(event), checkbox_text="Delete Assosiated Subpages")
         Chest.Dialog_Manager.show(f"{page_name}+deletion")
 

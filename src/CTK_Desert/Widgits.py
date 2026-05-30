@@ -15,17 +15,17 @@ class C_Widgits():
     def __init__(self, page_class, parent):
         self.page = page_class
         self.parent = parent
-        
-    def section(self, 
-                title:      str = None, 
-                fg_color:   Union[tuple, str] = "transparent", 
-                font:       Union[tuple, ctk.CTkFont] = (theme.font_B, 25), 
+
+    def section(self,
+                title:      str = None,
+                fg_color:   Union[tuple, str] = "transparent",
+                font:       Union[tuple, ctk.CTkFont] = (theme.font_B, 25),
                 text_color: Union[str, Tuple[str, str]] = theme.Ctxt,
-                padx: Union[int, Tuple[int, int]] = 30, 
-                pady: Union[int, Tuple[int, int]] = (20, 0), 
+                padx: Union[int, Tuple[int, int]] = 30,
+                pady: Union[int, Tuple[int, int]] = (20, 0),
                 inner_padx: Union[int, Tuple[int, int]] = 40,
                 inner_pady: Union[int, Tuple[int, int]] = (20, 0)):
-        
+
         section_frame = ctk.CTkFrame(self.parent, fg_color= fg_color)
 
         if title != None:
@@ -39,16 +39,16 @@ class C_Widgits():
 
         section_frame.pack(fill="x", padx=padx, pady=pady)
 
-        return ops_frame  
-        
-    def section_button(self, 
-                       section:         ctk.CTkFrame, 
-                       button_icon:     Union[str, Image.Image] = None, 
-                       button_command:  Callable = None, 
-                       icon_height:     int = 30, 
-                       button_text:     str = "", 
-                       font:            Union[Tuple[str, int], ctk.CTkFont] = (theme.font, 15), 
-                       fg_color:        Union[str, Tuple[str, str]] = theme.Caccent, 
+        return ops_frame
+
+    def section_button(self,
+                       section:         ctk.CTkFrame,
+                       button_icon:     Union[str, Image.Image] = None,
+                       button_command:  Callable = None,
+                       icon_height:     int = 30,
+                       button_text:     str = "",
+                       font:            Union[Tuple[str, int], ctk.CTkFont] = (theme.font, 15),
+                       fg_color:        Union[str, Tuple[str, str]] = theme.Caccent,
                        hover_color:     Union[str, Tuple[str, str]] = hvr_clr_g(theme.Caccent, "ld") ):
 
             if button_icon != None:
@@ -61,27 +61,27 @@ class C_Widgits():
                 s = (int(icon_height*r), int(icon_height))
                 button_icon = ctk.CTkImage(*button_icon, size=s)
 
-            section_button = ctk.CTkButton(section.master.winfo_children()[0], text=f"{button_text}", font=font, 
-                                           fg_color=fg_color, hover_color=color_finder(section.master) if fg_color == "transparent" else hover_color, 
-                                           image=button_icon, width=s[0], height=s[1], 
+            section_button = ctk.CTkButton(section.master.winfo_children()[0], text=f"{button_text}", font=font,
+                                           fg_color=fg_color, hover_color=color_finder(section.master) if fg_color == "transparent" else hover_color,
+                                           image=button_icon, width=s[0], height=s[1],
                                            command=button_command)
             section_button.pack(side="right", fill="x", padx=0)#20)
 
             return section_button
-    
+
 ###############################################################################################################################################################################################
 
     def _sectionUnit(self, section, title : str = ""):
-               
+
         unit_frame = ctk.CTkFrame(section, fg_color= "transparent")
 
         unit_label = ctk.CTkLabel(unit_frame, text=f"{title}", font=(theme.font, 20))
         unit_label.pack(side="left", fill="x")
 
         unit_frame.pack(fill="x", pady=(0, 20))
-        
+
         return unit_frame
-    
+
     def Button_unit(self, section, title : str = "",
                     text: str = "Click",
                     command: Callable = lambda: None,
@@ -93,7 +93,7 @@ class C_Widgits():
                     height: int = 28,
                     padx: Tuple[int, int] = (0, 0)
                     ):
-        
+
         if not lone_widget:
             master = self._sectionUnit(section, title)
         else:
@@ -110,11 +110,11 @@ class C_Widgits():
             border_color = None
             text_color  = theme.Ctxt
             hover_color = hvr_clr_g(fg_color, "ld")
-            
+
         unit_option = ctk.CTkButton(master = master, text = text, font = font, text_color = text_color, width = width, height = height, fg_color = fg_color, hover_color = hover_color, border_width = border_width, border_color = border_color, command = command)
         unit_option.pack(side="right", fill="x", padx=padx)
 
-        if invert:  #? Careful that fg_color is now stored in the text_color var, and fg_color is actually "transparent". 
+        if invert:  #? Careful that fg_color is now stored in the text_color var, and fg_color is actually "transparent".
             textclr_onEntry = theme.Ctxt if text_color != theme.Ctxt else theme.Ctxt[::-1]
             unit_option.bind("<Enter>", command=lambda e: unit_option.configure(fg_color=text_color, text_color=textclr_onEntry))
             unit_option.bind("<Leave>", command=lambda e: unit_option.configure(fg_color="transparent", text_color=text_color))
@@ -123,10 +123,10 @@ class C_Widgits():
 
     def ComboBox_unit(self, section, title : str = "",
                       values: Optional[List[str]] = None,
-                      default: str = None, 
-                      command: Union[Callable[[str], Any], None] = lambda var: None, 
+                      default: str = None,
+                      command: Union[Callable[[str], Any], None] = lambda var: None,
                       lone_widget: bool = False,
-                      variable: Union[ctk.Variable, None] = None, 
+                      variable: Union[ctk.Variable, None] = None,
                       fg_color: Optional[Union[str, Tuple[str, str]]] = theme.Csec,
                       border_color: Optional[Union[str, Tuple[str, str]]] = theme.Csec,#hvr_clr_g(theme.Csec, "ld"),
                       font: Optional[tuple] = (theme.font, 15),
@@ -139,17 +139,17 @@ class C_Widgits():
             master = section
 
         variable = ctk.StringVar(value=default) if variable is None else variable
-        unit_option = ctk.CTkComboBox(master, fg_color = fg_color, border_color=border_color, button_color=border_color, 
-                                      font = font, text_color = theme.Ctxt, width = width, height = height, 
-                                      dropdown_fg_color=fg_color, dropdown_font=font, dropdown_text_color = theme.Ctxt,  
+        unit_option = ctk.CTkComboBox(master, fg_color = fg_color, border_color=border_color, button_color=border_color,
+                                      font = font, text_color = theme.Ctxt, width = width, height = height,
+                                      dropdown_fg_color=fg_color, dropdown_font=font, dropdown_text_color = theme.Ctxt,
                                       state = "readonly", values = values, variable = variable, command = command)
         # unit_option.set(f"{default}") if default is not None else None
         unit_option.pack(side="right", fill="x")
 
         return unit_option, variable
-    
+
     def CheckBox_unit(self, section, title : str = "",
-                      default: bool = False, 
+                      default: bool = False,
                       command: Union[Callable[[], Any], None] = None,
                       lone_widget: bool = False,
                       variable: Union[ctk.Variable, None] = None,
@@ -163,7 +163,7 @@ class C_Widgits():
                       checkbox_width: int = 24,
                       checkbox_height: int = 24,
                       ):
-        
+
         if not lone_widget:
             master = self._sectionUnit(section, title)
         else:
@@ -171,15 +171,15 @@ class C_Widgits():
 
         variable = ctk.BooleanVar(value=default) if variable is None else variable
         unit_option = ctk.CTkCheckBox(master, text="", width=width, height=height, checkbox_width=checkbox_width, checkbox_height=checkbox_height,
-                                      fg_color=fg_color, hover_color=hvr_clr_g(fg_color, "ld"), 
+                                      fg_color=fg_color, hover_color=hvr_clr_g(fg_color, "ld"),
                                       border_color=border_color, checkmark_color=checkmark_color,
                                       command=command, variable=variable, onvalue=True, offvalue=False,)
         # if default != None:
-        #     unit_option.configure(variable=default) 
+        #     unit_option.configure(variable=default)
         unit_option.pack(side="right", fill="x")
 
         return unit_option, variable
-    
+
     def Entry_unit(self, section, title : str = "",
                    placeholder_text: Union[str, None] = None,
                    lone_widget: bool = False,
@@ -190,7 +190,7 @@ class C_Widgits():
                    width: int = 140,
                    height: int = 28,
                    ):
-        
+
         if not lone_widget:
             master = self._sectionUnit(section, title)
         else:
@@ -208,7 +208,7 @@ class C_Widgits():
             unit_option.bind("<FocusOut>", lambda e, wdgt = unit_option, clr = plchldrClr, textVar = textvariable: self._entryFout(e, wdgt, clr, textVar, placeholder_text))
 
         return unit_option, textvariable
-    
+
     def _entryFin(self, event, widget, color, textVar, placeHolder):
         content = textVar.get()
         if content == placeHolder or content == "":
@@ -220,7 +220,7 @@ class C_Widgits():
         if content == placeHolder or content == "":
             widget.insert(0, placeHolder)
             widget.configure(text_color = color)
-    
+
 class small_tabs(ctk.CTkFrame):
     def __init__(self, page_class: Page_BM, parent, img_width=300, img_height=180, padx=0, pady=(0, 0)):
         super().__init__(parent, fg_color="transparent")
@@ -229,10 +229,10 @@ class small_tabs(ctk.CTkFrame):
         self.image_width = img_width
         self.image_height = img_height
         self.canvas_color = self.page.get_scrframe_color()
-        self.tabs = [] 
+        self.tabs = []
         self.slots = []
-        self.images = [] 
-        
+        self.images = []
+
         self.reorder_btn_state = 0
         self.unit_h = 0
         self.swapping = 0
@@ -246,7 +246,7 @@ class small_tabs(ctk.CTkFrame):
 
         self.pack(expand=True, fill="x", padx=padx, pady=pady)
         self.page_function_calls()
-        
+
     def tab(self, text, image, button_icon=None, button_command=None, icon_size=(25, 25)):
 
         tab_cont = ctk.CTkFrame(self, fg_color="transparent", height=self.image_height+self.whiteLine_pady+2)   # 2 for the white line
@@ -260,7 +260,7 @@ class small_tabs(ctk.CTkFrame):
             im = Image.open(image)
         else:
             raise TypeError("image should be a path to an image or an Image object.")
-        
+
         ratio = im.size[0]/im.size[1]
         if ratio > (self.image_width/self.image_height):
             s = (int(self.image_height*ratio), self.image_height)
@@ -269,7 +269,7 @@ class small_tabs(ctk.CTkFrame):
         im_ctk = ImageTk.PhotoImage(im.resize(s))
         self.images.append(im_ctk)
 
-        canvas = ctk.CTkCanvas(st_frame, bg=self.canvas_color[0] if ctk.get_appearance_mode() == "Light" else self.canvas_color[1], 
+        canvas = ctk.CTkCanvas(st_frame, bg=self.canvas_color[0] if ctk.get_appearance_mode() == "Light" else self.canvas_color[1],
                                bd=0, highlightthickness=0, relief='ridge', width=self.image_width, height=self.image_height)
         canvas.pack(side="left")
         canvas.create_image(self.image_width/2, self.image_height/2, anchor="center", image=im_ctk)
@@ -280,7 +280,7 @@ class small_tabs(ctk.CTkFrame):
         if button_icon: #^ make it so that it can be a directory(str), actual_image(Image.Image), custom_image(tuple), or None
             button_image = change_pixel_color(button_icon, colors=theme.icon_norm)
             button_image = ctk.CTkImage(*button_image, size=icon_size)
-            ctk.CTkButton(st_frame, text="", fg_color="transparent", hover_color=self.canvas_color, image=button_image, 
+            ctk.CTkButton(st_frame, text="", fg_color="transparent", hover_color=self.canvas_color, image=button_image,
                           command=button_command, width=30, height=30).pack(side="right")
 
         st_frame.pack(in_=tab_cont, expand=True, fill="x")
@@ -343,7 +343,7 @@ class small_tabs(ctk.CTkFrame):
         if self.tab_index != None:
             self.swapping = 1
             scaled_y_event = event.y/Chest.scaleFactor
-            
+
             up_target = (scaled_y_event+self.whiteLine_pady+2 -self.event_y_offset)/self.unit_h   # up
             if up_target < 0:
                 up_target = up_target - 1
@@ -355,7 +355,7 @@ class small_tabs(ctk.CTkFrame):
                 target = int(down_target)
             else:
                 target = int(up_target)
-            
+
             # print(f"released: {scaled_y_event}, target step: {target}, offset: {self.event_y_offset}")
             self.swap(Tab, target)
             btn.configure(text="⥮")
@@ -367,7 +367,7 @@ class small_tabs(ctk.CTkFrame):
         current_pos = self.slots.index(Tab)
         target_pos = current_pos + step
         tabs_count = len(self.slots)
-        
+
         if target_pos >= 0 and target_pos < tabs_count:
             self.tabs.insert(target_pos, self.tabs.pop(current_pos))
             self.slots.insert(target_pos, self.slots.pop(current_pos))
@@ -418,7 +418,7 @@ class large_tabs(ctk.CTkFrame):
 
         self.page_function_calls()
 
-    def tab(self, text=None, image=None, button_icon=None, icon_size=20, button_command=None):  
+    def tab(self, text=None, image=None, button_icon=None, icon_size=20, button_command=None):
         expander = self.constructor(text, image, button_icon, icon_size, button_command)
         if self._started:
             self.row_frame()
@@ -445,7 +445,7 @@ class large_tabs(ctk.CTkFrame):
 
         expander = ctk.CTkFrame(master=self.parent, fg_color="transparent")
         tab_cont = ctk.CTkFrame(expander, fg_color="transparent")
-        
+
         canvas = ctk.CTkCanvas(tab_cont, bg=self.canvas_color[0] if ctk.get_appearance_mode() == "Light" else self.canvas_color[1], bd=0, highlightthickness=0, relief='ridge', width=self.image_width, height=self.image_height)
         canvas.pack()
         canvas.create_image(self.image_width/2, self.image_height/2, anchor="center", image=self.images[-1])
@@ -456,7 +456,7 @@ class large_tabs(ctk.CTkFrame):
         if button_icon != None:
             self.butt0n_icon(["_", content], button_icon, icon_size, button_command)
         content.pack(expand=True, fill="x", pady=(10, 20))
-        
+
         tab_cont.pack()
         return expander
 
@@ -470,7 +470,7 @@ class large_tabs(ctk.CTkFrame):
         r = w/h
         s = (int(icon_size*r), icon_size)
         image = ctk.CTkImage(image[0], image[1], size=s)
-        actbtn = ctk.CTkButton(parent[1], text="", image=image, fg_color="transparent", hover_color=theme.Csec, 
+        actbtn = ctk.CTkButton(parent[1], text="", image=image, fg_color="transparent", hover_color=theme.Csec,
                                 width=int(icon_size*r), command= button_command)
         actbtn.pack(side="right", padx=5, pady=5)
 
@@ -494,11 +494,11 @@ class large_tabs(ctk.CTkFrame):
             return 0
         if not (self.autofit and len(self.rows) > 0):
             return
-    
-        new_capacity = int(self.winfo_width() / (self.image_width+(3*self.padx)))
+
+        new_capacity = max(1, int(self.winfo_width() / (self.image_width+(3*self.padx))))
         if new_capacity < self.row_capacity:                    #^ shrinked
             for row in range(len(self.rows)):                   #? for each row (top to bottom)
-                for n in range(self.row_capacity-1, -1, -1):    #? for each tab in the row (right to left) 
+                for n in range(self.row_capacity-1, -1, -1):    #? for each tab in the row (right to left)
                     rank = n + (row*self.row_capacity)          #? get tab index in the self.tabs list
                     if len(self.tabs)-1 < rank:                 #? if the index is out of range (happens in the last row) then
                         continue                                    #? skip the rest of this current loop iteration and move to the next one
@@ -507,7 +507,7 @@ class large_tabs(ctk.CTkFrame):
                     r_new = rank // new_capacity                #? get the new row index
                     if r_old != r_new:                          #? if the row index has changed then (START MOVING TABS DOWNWARDS)
                         while len(self.rows)-1 < r_new:                                         #? while the new row index is out of range (happens when we need to create a new row) then
-                            new_frame = ctk.CTkFrame(self, fg_color="transparent")                #? create a new row 
+                            new_frame = ctk.CTkFrame(self, fg_color="transparent")                #? create a new row
                             new_frame.pack(fill="x", expand=True)                                   #? pack the new row
                             self.rows.append(new_frame)                                             #? add it to the list of rows
                         before_arg = None                                                       #? preset the before_arg to None. incase the new row is empty (doesn't have other tabs)
@@ -562,7 +562,7 @@ class large_tabs(ctk.CTkFrame):
             self.parent.configure(height=final_height)
 
     def _on_start(self):
-        self.row_capacity = int(self.winfo_width() / (self.image_width+(3*self.padx)))
+        self.row_capacity = max(1, int(self.winfo_width() / (self.image_width+(3*self.padx))))
         self.row_frame()
         for n, expander in enumerate(self.tabs):
             expander.pack(in_ = self.rows[n//self.row_capacity], expand=self.autofit, fill="both", side="left", padx=self.padx, pady=self.pady)
@@ -574,19 +574,19 @@ class large_tabs(ctk.CTkFrame):
         self.page.updating_call_list.append(self._update_layout)
 
 class Banner(ctk.CTkFrame):
-    def __init__(self, 
-                 page: Page_BM, 
-                 parent: ctk.CTkFrame, 
-                 image: Union[str, Image.Image], 
-                 banner_title: str = "", 
-                 banner_content: Optional[str] = None, 
-                 button_text: str = "Click", 
-                 button_command: Callable = lambda: None, 
+    def __init__(self,
+                 page: Page_BM,
+                 parent: ctk.CTkFrame,
+                 image: Union[str, Image.Image],
+                 banner_title: str = "",
+                 banner_content: Optional[str] = None,
+                 button_text: str = "Click",
+                 button_command: Callable = lambda: None,
                  shifter: int = 0.7,  #? shifter is a value between -1 and 1
                  overlay: int = 0.5, #? overlay is a value between 0 and 1
-                 font: Union[Tuple[str, int], ctk.CTkFont] = (theme.font_B, 20), 
-                 font2: Union[Tuple[str, int], ctk.CTkFont] = (theme.font, 12), 
-                 ): 
+                 font: Union[Tuple[str, int], ctk.CTkFont] = (theme.font_B, 20),
+                 font2: Union[Tuple[str, int], ctk.CTkFont] = (theme.font, 12),
+                 ):
         super().__init__(parent, fg_color="transparent")
         self.pack(fill="both")
 
@@ -596,7 +596,7 @@ class Banner(ctk.CTkFrame):
         self.content : bool = False
         font = (font[0], int(font[1]*Chest.scaleFactor))
         font2 = (font2[0], int(font2[1]*Chest.scaleFactor))
-        
+
         if isinstance(image, str):
             self.ori_img = Image.open(image)
         elif isinstance(image, Image.Image):
@@ -606,11 +606,11 @@ class Banner(ctk.CTkFrame):
         overlay_color, rgb_value, luminance = self.get_dominant_color(self.ori_img)  # 0.25 secs, need to find a way to make it faster
         if luminance > 128:
             fill = theme.Ctxt[0]
-            hvr = "l" 
-        else: 
+            hvr = "l"
+        else:
             fill = theme.Ctxt[1]
-            hvr = "d" 
-        
+            hvr = "d"
+
         width, height = self.ori_img.size
         self.ratio = width/height
         self.image_calc_height = int(Chest.Window.winfo_vrootheight()*0.4)
@@ -640,7 +640,7 @@ class Banner(ctk.CTkFrame):
 
         self.widgets_heights = []   #? Title, Content, Button
         self.total_height = 0
-        
+
         self.canvas.create_text (secret_work_x, 0, anchor="nw", tags="banner_text" , text=banner_title, font=font, fill=fill)
         self.widgets_heights.append(self.canvas.bbox("banner_text")[3] + self.padding)
 
@@ -649,13 +649,13 @@ class Banner(ctk.CTkFrame):
             self.widgets_heights.append(0)
             self.content = True
 
-        action_button = ctk.CTkButton(self, text=f" {button_text} ", font=(font[0], font2[1]), corner_radius=0, command=button_command, text_color=fill, 
+        action_button = ctk.CTkButton(self, text=f" {button_text} ", font=(font[0], font2[1]), corner_radius=0, command=button_command, text_color=fill,
                                       fg_color = hvr_clr_g(overlay_color, hvr, 40), hover_color = hvr_clr_g(overlay_color, hvr, 60))
         self.canvas.create_window (secret_work_x, 0, anchor="nw", tags="action_button", window=action_button)
         self.widgets_heights.append(self.canvas.bbox("action_button")[3])
 
         self.page_function_calls()
-        
+
     def get_dominant_color(self, image: Image.Image, k: int = 4, sample_width: int = 300) -> str:
         width, height = image.size
         image = image.copy().resize((sample_width, int(sample_width/(width/height))))  # Resize the image to speed up processing
@@ -666,7 +666,7 @@ class Banner(ctk.CTkFrame):
         # Perform KMeans clustering
         kmeans = KMeans(n_clusters=k)
         kmeans.fit(pixels)
-        
+
         # Find the cluster center that is most common
         counts = np.bincount(kmeans.labels_)
         dominant_color = kmeans.cluster_centers_[np.argmax(counts)]
@@ -676,7 +676,7 @@ class Banner(ctk.CTkFrame):
 
         result = '#%02x%02x%02x' % tuple(dominant_color.astype(int))    # rgb to hex
         return result, tuple(dominant_color.astype(int)), luminance
-            
+
     @lru_cache(maxsize=5)   #! careful may not release the class instance from memory (https://stackoverflow.com/questions/33672412/python-functools-lru-cache-with-instance-methods-release-object)
     def _resize_image(self, width: int, height: int) -> Image.Image:
         resized_img = self.ori_img.copy().resize((width, height))
@@ -727,7 +727,7 @@ class Banner(ctk.CTkFrame):
             self.canvas.itemconfigure("banner_content", width=(self.canvas_width/3)-(self.starting_x_pos))
             self.widgets_heights[1] = self.canvas.bbox("banner_content")[3] + (self.multi*self.padding)
         self.total_height = sum(self.widgets_heights)
-        
+
         starting_y_pos = (self.canvas_height-self.total_height)/2 + (self.shifter*((self.canvas_height-self.total_height)/2))
         self.canvas.moveto("banner_text", self.starting_x_pos, starting_y_pos)
         if self.content:
@@ -735,7 +735,7 @@ class Banner(ctk.CTkFrame):
             self.canvas.moveto("action_button" , self.starting_x_pos, starting_y_pos + self.widgets_heights[0] + self.widgets_heights[1])
         else:
             self.canvas.moveto("action_button" , self.starting_x_pos, starting_y_pos + self.widgets_heights[0])
-    
+
     def _on_update(self):
         self.canvas_width = self.canvas.winfo_width()
         self.canvas_height = self.canvas.winfo_height()
@@ -762,7 +762,7 @@ class Banner(ctk.CTkFrame):
 
     #! Current probelms:
     #//  1. when scaling down the image (reducing the width of the window) the if condition is not correct yet.
-    #//  2. the text wrap isn't ready yet (doesn't allow for the increase of decrease of the num of lines). 
+    #//  2. the text wrap isn't ready yet (doesn't allow for the increase of decrease of the num of lines).
     #//  3. need to work on the color choice for the text and button (probably based on the overlay_color lightness)
     #//  4. Check on the image placement when (its width is so big). Maybe make it so that it is always centered, with the first 1/6 of the canvas width as the limit.
     #//  5. the overlay needs some work
