@@ -3,7 +3,7 @@ import os
 import inspect
 
 from .Core import userChest as Chest
-from .Page_base_model import Page_BM, Tile_BM
+from .Page_base_model import Page_BM, Tile_BM, TileConfig
 from .Theme import theme
 from .Widgits import C_Widgits, large_tabs
 from .utils import color_finder
@@ -11,15 +11,12 @@ from .utils import color_finder
 
 class Workspace(Page_BM):
     def __init__(self):
-        layout_state: dict = {'grid': {'rows': 1, 'columns': 1, 'gap': 11.2},
-                              'tiles': [{'row':         0,
-                                         'column':       0,
-                                         'rowspan':      1,
-                                         'columnspan':   1,
-                                         'page': 'workspacetile',
-                                         'expandable': True,
-                                         'width': 1,
-                                         'height': 1}]}
+        layout_state: dict = {
+            "grid": (1, 1, 11.2),
+            "tiles": {
+                "workspacetile": TileConfig(0, 0),
+            }
+        }
         super().__init__(layout_state)
         self.add_tile(WorkspaceTile())
 

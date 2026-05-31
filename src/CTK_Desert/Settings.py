@@ -5,32 +5,20 @@ import random
 import customtkinter as ctk
 
 from .Core import userChest as Chest
-from .Page_base_model import Page_BM, Tile_BM
+from .Page_base_model import Page_BM, Tile_BM, TileConfig
 from .Theme import theme
 from .Widgits import C_Widgits, small_tabs
 
 
 class Settings(Page_BM):
     def __init__(self):
-        layout_state: dict = {'grid': {'rows': 1, 'columns': 1, 'gap': 11.2},
-                              # "settingstile" : [(0, 0, 1, 1), True, (1, 1)]
-                              'tiles': [{'row':         0,
-                                         'column':       0,
-                                         'rowspan':      1,
-                                         'columnspan':   1,
-                                         'page': 'settingstile',
-                                         'expandable': True,
-                                         'width': 1,
-                                         'height': 1},
-                                        # {'row':         0,
-                                        #  'column':       1,
-                                        #  'rowspan':      1,
-                                        #  'columnspan':   1,
-                                        #  'page': 'workspacetile',
-                                        #  'expandable': True,
-                                        #  'width': 1,
-                                        #  'height': 1}
-                                         ]}
+        layout_state: dict = {
+            "grid": (1, 1, 11.2),
+            "tiles": {
+                "settingstile": TileConfig(0, 0),
+                # "workspacetile": TileConfig(0, 1, 1, 1, True, 1, 1)
+            }
+        }
         super().__init__(layout_state)
         self.add_tile(SettingsTile())
         # self.add_tile(Chest.MainPages["Workspace"]._tiles["workspacetile"])

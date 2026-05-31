@@ -5,6 +5,7 @@ from collections import defaultdict
 from .Core import userChest as Chest
 from .Theme import theme
 from .utils import hvr_clr_g
+from .Page_base_model import TileConfig
 
 class GridLayoutEditor:
     def __init__(self, parent:ctk.CTkFrame, rows: int, columns: int, gap: int):
@@ -346,56 +347,48 @@ class GridLayoutEditor:
 
     def save_layout(self):
         layout_state = {
-            "grid": {
-                "rows": self.req_rows,
-                "columns": self.req_columns,
-                "gap": self.gap
-            },
-            "tiles": []
+            "grid": (self.req_rows, self.req_columns, self.gap),
+            "tiles": {}
         }
         for tile in set().union(*self._rows.values()):
-            tile_info = self._get_info(tile)
             page_name = tile.grid_state_label.cget("text")
-            tile_state = {
-                "row": tile_info[0],
-                "column": tile_info[1],
-                "rowspan": tile_info[2],
-                "columnspan": tile_info[3],
-                "page": page_name if page_name not in self.assigned_names else None,    #? at this stage any name still inside `self.assigned_names` is a page that wasn't assigned to any tile
-                "expandable": tile.tile_expandable,
-                "width": tile.cget("width") if not tile.tile_expandable else None,
-                "height": tile.cget("height") if not tile.tile_expandable else None
-            }
-            layout_state["tiles"].append(tile_state)
+            if page_name not in self.assigned_names:    #? at this stage any name still inside `self.assigned_names` is a page that wasn't assigned to any tile
+                tile_info = self._get_info(tile)
+                if not tile.tile_expandable:
+                    width = tile.cget('width'); height = tile.cget('height')
+                else:
+                    width = height = 1
+                layout_state["tiles"][page_name] = TileConfig(*tile_info, tile.tile_expandable, width, height)
         return layout_state
 
     def load_layout(self, layout_state):
-        self.req_rows = layout_state["grid"]["rows"]
-        self.req_columns = layout_state["grid"]["columns"]
-        self.gap = layout_state["grid"]["gap"]
+        self.req_rows = layout_state["grid"][0]
+        self.req_columns = layout_state["grid"][1]
+        self.gap = layout_state["grid"][2]
         self.parent.grid_rowconfigure(list(range(self.req_rows)), weight=1, uniform="rows")
         self.parent.grid_columnconfigure(list(range(self.req_columns)), weight=1, uniform="cols")
 
         tiles = {}
-        for tile_state in layout_state["tiles"]:
+        for tile_name, tile_state in layout_state["tiles"].items():
+            tile_state: "TileConfig"
             tile = ctk.CTkFrame(self.parent, width=1, height=1, fg_color=theme.Cbg)    #? width/height are set to 1. because grid can only shrink to the largest frame size only (why we set all frame sizes to 1)
-            tile.grid(row=tile_state["row"], column=tile_state["column"], rowspan=tile_state["rowspan"], columnspan=tile_state["columnspan"], sticky="nsew",
-                        padx = (self.gap//2 if tile_state["column"]!=0 else 0, self.gap//2 if tile_state["column"]+tile_state["columnspan"]!=self.req_columns else 0),
-                        pady = (self.gap//2 if tile_state["row"]!=0 else 0, self.gap//2 if tile_state["row"]+tile_state["rowspan"]!=self.req_rows else 0))
-            if not tile_state["expandable"]:
+            tile.grid(row=tile_state.row, column=tile_state.column, rowspan=tile_state.rowspan, columnspan=tile_state.columnspan, sticky="nsew",
+                        padx = (self.gap//2 if tile_state.column!=0 else 0, self.gap//2 if tile_state.column+tile_state.columnspan!=self.req_columns else 0),
+                        pady = (self.gap//2 if tile_state.row!=0 else 0, self.gap//2 if tile_state.row+tile_state.rowspan!=self.req_rows else 0))
+            if not tile_state.expandable:
                 tile.tile_expandable = False
-                if tile_state["width"] is not None and tile_state["width"] != 1:
-                    self.parent.grid_columnconfigure(tile_state["column"], weight=0, minsize=tile_state["width"], uniform="")
-                    tile.configure(width=tile_state["width"])
-                if tile_state["height"] is not None and tile_state["height"] != 1:
-                    self.parent.grid_rowconfigure(tile_state["row"], weight=0, minsize=tile_state["height"], uniform="")
-                    tile.configure(height=tile_state["height"])
+                if tile_state.width != 1:
+                    self.parent.grid_columnconfigure(tile_state.column, weight=0, minsize=tile_state.width, uniform="")
+                    tile.configure(width=tile_state.width)
+                if tile_state.height != 1:
+                    self.parent.grid_rowconfigure(tile_state.row, weight=0, minsize=tile_state.height, uniform="")
+                    tile.configure(height=tile_state.height)
                 tile.grid_propagate(False)
                 tile.pack_propagate(False)
             else:
                 tile.tile_expandable = True
 
-            tiles[tile_state["page"]]=tile
+            tiles[tile_name]=tile
 
         return tiles
 

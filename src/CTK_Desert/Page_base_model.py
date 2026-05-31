@@ -6,12 +6,22 @@ import tkinter as tk
 import customtkinter as ctk
 from typing import Union, Tuple, Callable
 import threading, time
+from typing import NamedTuple
 
 from .Core  import userChest as Chest
 from .Theme import theme, change_pixel_color
 from .utils import hvr_clr_g
 from .Minimal_scrollbar import Scrollbar
 from .GridLayout import GridLayoutEditor
+
+class TileConfig(NamedTuple):
+    row: int
+    column: int
+    rowspan: int = 1
+    columnspan: int = 1
+    expandable: bool = True
+    width: float = 1
+    height: float = 1
 
 class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.content_frame"
     def __init__(self, layout:dict=None):
@@ -20,13 +30,13 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.content_frame"
 
         self._tiles: dict[str, Tile_BM] = {}
         self._disconnected_tiles: list[Tile_BM] = []
-        self._fixed_width: dict[str, bool] = {}
 
         self.widget_str = str(self)
         self.openable = True            #? can the page be opened now or not
         self._displayed = False             #? is Page currently opened or not
         self._started = False
 
+        self.layout = layout
         self._grid_editor = GridLayoutEditor(self, 1, 1, 5)
         if layout:
             self._cells: dict = self._grid_editor.load_layout(layout)
@@ -36,7 +46,6 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.content_frame"
     def add_tile(self, tile:"Tile_BM"):
         self._tiles[tile.widget_str.split("!")[-1]] = tile
         self._disconnected_tiles.append(tile)   #? with this case any new tiles won't be displayed until the next show page call
-        # tile._use_fixed_width = self._cells
 
     def update_width(self):
         for tile in self._tiles.values():
@@ -112,7 +121,7 @@ class Tile_BM(ctk.CTkFrame):
         self.pickable = False           #? has the page started at least once or not
 
         self.container_pack_side: str = container_pack_side
-        self._use_fixed_width: dict[str, int] = False                     #todo: convert into a dict, to allow
+        self._is_width_fixed: bool = False
         self.scrollbar_inside:bool = scrollbar_inside
         # self._managed_by_tile:bool = False
         # self.tiling_manager:"TilingWindowManager" = None      #! shouldn't be needed
@@ -190,17 +199,14 @@ class Tile_BM(ctk.CTkFrame):
         return wrapper
 
     @_update_queue
-    def update_width(self):
+    def update_width(self, page_switch=False):
         print(f"updating width of tile {self.widget_str.split('!')[-1]}")
-        # if self.pickable and self._use_fixed_width and not self.page_switched:
-        self.update()
-        current_width = self.winfo_width()
-        #! fixed_width: need some work, centralize at pageBM
-        # if self._use_fixed_width[self._in_container.widget_str]==current_width:  # skip width updates if page width is fixed and the page has already started (initial width is set)
-            # return
+        if self._is_width_fixed and not page_switch:
+            return
 
         if self.scrollable:
-            self.Scrollable_canvas.itemconfigure("frame", width=current_width) # update frame width
+            self.update()
+            self.Scrollable_canvas.itemconfigure("frame", width=self.winfo_width()) # update frame width
         if self.pickable:
             self.Updating() # update widgets and user defined functions
 
@@ -273,13 +279,14 @@ class Tile_BM(ctk.CTkFrame):
         self.pack(in_=self._in_container, side=self.container_pack_side, expand=True, fill="both")
         if page_change:
             self.opened = True
-            self.update_width()
+            self.update_width(page_change)
 
     def _on_page_switch(self, page:Page_BM):
         if self._current_page:
             self._current_page._disconnected_tiles.append(self)
         self._current_page = page
         self._in_container = page._cells[self.widget_str.split("!")[-1]]
+        self._is_width_fixed = not page.layout["tiles"][self.widget_str.split("!")[-1].lower()].expandable
         self.tile_func(page)
 
     def _on_show_callbacks(self):
