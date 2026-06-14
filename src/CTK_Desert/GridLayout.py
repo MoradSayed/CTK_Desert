@@ -377,16 +377,22 @@ class GridLayoutEditor:
                         pady = (self.gap//2 if tile_state.row!=0 else 0, self.gap//2 if tile_state.row+tile_state.rowspan!=self.req_rows else 0))
             if not tile_state.expandable:
                 tile.tile_expandable = False
+                tile.fixed_width = False
+                tile.fixed_height = False
                 if tile_state.width != 1:
                     self.parent.grid_columnconfigure(tile_state.column, weight=0, minsize=tile_state.width, uniform="")
                     tile.configure(width=tile_state.width)
+                    tile.fixed_width = True
                 if tile_state.height != 1:
                     self.parent.grid_rowconfigure(tile_state.row, weight=0, minsize=tile_state.height, uniform="")
                     tile.configure(height=tile_state.height)
+                    tile.fixed_height = True
                 tile.grid_propagate(False)
                 tile.pack_propagate(False)
             else:
                 tile.tile_expandable = True
+                tile.fixed_width = False
+                tile.fixed_height = False
 
             tiles[tile_name]=tile
 

@@ -1,11 +1,12 @@
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .Binder import Binder
+    from .Page_base_model import Page_BM, Tile_BM
 
 import customtkinter as ctk
 import os, platform, json, customtkinter as ctk
 from .Theme import theme
-from typing import Callable, Literal
+from typing import Callable, Literal, Union
 _platform = platform.system()
 if _platform == "Windows":
     from winreg import *
@@ -25,22 +26,20 @@ class Chest():
         else:   #! for linux and mac (to be implemented)
             self.scaleFactor = 1
         self.Binder: "Binder" = None
-            
+
     def _D__Setup_Chest(self, window, frame):
         from .Tab_Page_Frame import Frame
         self.Window = window
         self.Manager : Frame = frame
         self.PageParent = self.Manager.page_frame
         self.Current_Page = "Get it using the get_current_page() method"
-        self.Displayed_Pages = self.Manager.pages_dict
         self.MainPages = self.Manager.mainpages_dict
-        self.SubPages = self.Manager.subpages_dict
         self.userPagesDirectory = self.Manager.U_Pages_dir
         self.toolsFrame = self.Manager.apps_frame
         self.Dialog_Manager = self.Manager.dialog_widget
 
         self.thread_reload_var =  ctk.StringVar()
-        self.thread_reload_var.trace_add("write", lambda *args: self.reload_page(self.thread_reload_var.get()))
+        self.thread_reload_var.trace_add("write", lambda *args: self.Manager.tiles[self.thread_reload_var.get().lower()].reload())
 
     def get_current_page(self):
         """Returns the Displayed Page name
@@ -57,15 +56,6 @@ class Chest():
             Target_Page (str): Name of the target page "case sensitive"
         """
         self.Manager.page_switcher(Target_Page)
-
-    def reload_page(self, name: str, args: tuple = ()):
-        """Reloads the page to apply any saved changes made to the code of the page
-
-        Args:
-            name (str): Name of the page "case sensitive"
-            args (tuple): Arguments to be passed to the page
-        """
-        self.Manager.reload_page(name, args)
 
     def Store_a_Page(self, Target_Page: str, Switch: bool =True):
         """Constructs a new main page, so that it is ready to be opened at any moment
@@ -87,35 +77,6 @@ class Chest():
         """
 
         return self.Manager.delete_page(Target_Page, delete_subpages, shift_del)
-
-    def Store_SubPage(self, Main_page: str, Sub_page, keep : bool = True, args: tuple = ()):
-        """Constructs the Subpage, so that it is ready to be opened at any moment
-
-        Args:
-            Main_page (str): used to get the name of the main page class "case sensitive"
-            Sub_page (Class): used to initialize the subpage class with the necessary parameters
-            keep (bool, optional): keep the subpage if it already exists. Defaults to True.
-            args (tuple, optional): arguments to be passed to the subpage. Defaults to ().
-        """
-        self.Manager.Subpage_Construction(Main_page, Sub_page, keep, args)
-
-    def Use_SubPage(self, Main_page_name: str, Sub_page_name: str):
-        """Opens the SubPage
-
-        Args:
-            Main_page (str): used to get the name of the main page class "case sensitive"
-            Sub_page (str): used to get the name of the sub page class "case sensitive"
-        """
-        self.Manager.Subpage_init(Main_page_name, Sub_page_name)
-
-    def Return_SubPage(self, Main_page_name: str, Sub_page_name: str):
-        """Closes the SubPage
-
-        Args:
-            Main_page (str): used to get the name of the main page class "case sensitive"
-            Sub_page (str): used to get the name of the sub page class "case sensitive"
-        """
-        self.Manager.Subpage_return(Main_page_name, Sub_page_name)
 
     def Get_Prefered_Theme_Mode(self):
         """Returns the prefered theme of the app

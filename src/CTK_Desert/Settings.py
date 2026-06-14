@@ -20,8 +20,6 @@ class Settings(Page_BM):
             }
         }
         super().__init__(layout_state)
-        self.add_tile(SettingsTile())
-        # self.add_tile(Chest.MainPages["Workspace"]._tiles["workspacetile"])
 
 # don't ever pack the frame, it will be packed in the Tab_Page_Frame.py
 

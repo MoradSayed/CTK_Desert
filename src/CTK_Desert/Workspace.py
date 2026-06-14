@@ -18,7 +18,6 @@ class Workspace(Page_BM):
             }
         }
         super().__init__(layout_state)
-        self.add_tile(WorkspaceTile())
 
 # don't ever pack the frame, it will be packed in the Tab_Page_Frame.py
 
@@ -33,10 +32,10 @@ class WorkspaceTile(Tile_BM):
         # self.add_menu_button(r"C:\Users\Morad\Downloads\icons8-reload-64.png", lambda: Chest.reload_page("Workspace")) #! need to move the image to the library if i am gonna use it
 
         #todo: uncomment after refactoring the subpage system to work with the new page system (#SP1)
-        # from .AddPage import AddPage
-        # Chest.Store_SubPage("Workspace", AddPage)
+        from .AddPage import AddPage
+        self.newpage_page = AddPage()
         # from .PageEditor import TiledEditor
-        # Chest.Store_SubPage("Workspace", TiledEditor)
+        # self.editor_page = TiledEditor()
 
         self.icons_path = Chest.Manager.original_icons_dir
         self.cwdgs = C_Widgits(self, self.frame)
@@ -48,9 +47,9 @@ class WorkspaceTile(Tile_BM):
         # Section 1
         self.sectionframe = self.cwdgs.section("Pages")
         self.cwdgs.section_button(section=self.sectionframe, fg_color="transparent", button_icon=os.path.join(self.icons_path, "icons8-add-96.png"), icon_height=30,
-                                  )# button_command=lambda: Chest.Use_SubPage("Workspace", "AddPage"))      #todo: uncomment after refactoring (#SP1)
+                                  button_command=lambda: self.open_subpage(self.newpage_page))      #todo: uncomment after refactoring (#SP1)
         self.cwdgs.section_button(section=self.sectionframe, fg_color="transparent", button_icon=os.path.join(self.icons_path, "icons8-edit-64.png"), icon_height=30,
-                                  )# button_command=lambda: Chest.Use_SubPage("Workspace", "TiledEditor"))  #todo: uncomment after refactoring (#SP1)
+                                  )#button_command=lambda: self.open_subpage(self.editor_page))  #todo: uncomment after refactoring (#SP1)
         # Section Unit (options)
         self.pages_tabs = large_tabs(self, self.sectionframe, autofit=True)
 
@@ -66,13 +65,7 @@ class WorkspaceTile(Tile_BM):
                                         button_command=lambda page_name=page: self.delete(page_name))
 
     def go(self, page_name):
-        if Chest.MainPages[page_name] is Chest.Displayed_Pages[page_name]:
-            Chest.Switch_Page(page_name)
-            # print("state 1")
-        else:
-            Chest.Return_SubPage("Home", "HSubPage")
-            Chest.Switch_Page(page_name)
-            # print("state 2")
+        Chest.Switch_Page(page_name)
 
     def edit(self, page_name):
         dir = inspect.getmodule(Chest.MainPages[page_name]).__file__

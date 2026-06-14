@@ -7,12 +7,12 @@ import customtkinter as ctk
 from typing import Union, Tuple, Callable
 import threading, time
 from typing import NamedTuple
+from bidict import bidict
 
 from .Core  import userChest as Chest
 from .Theme import theme, change_pixel_color
 from .utils import hvr_clr_g
 from .Minimal_scrollbar import Scrollbar
-from .GridLayout import GridLayoutEditor
 
 class TileConfig(NamedTuple):
     row: int
@@ -22,16 +22,15 @@ class TileConfig(NamedTuple):
     expandable: bool = True
     width: float = 1
     height: float = 1
+from .GridLayout import GridLayoutEditor
 
 class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.content_frame"
     def __init__(self, layout:dict=None):
         self.parent = Chest.PageParent
         super().__init__(self.parent, fg_color="transparent")
 
-        self._tiles: dict[str, Tile_BM] = {}
-        self._disconnected_tiles: list[Tile_BM] = []
-
         self.widget_str = str(self)
+        self._name = self.widget_str.split("!")[-1]
         self.openable = True            #? can the page be opened now or not
         self._displayed = False             #? is Page currently opened or not
         self._started = False
@@ -39,58 +38,63 @@ class Page_BM(ctk.CTkFrame): #the final frame to use is the "self.content_frame"
         self.layout = layout
         self._grid_editor = GridLayoutEditor(self, 1, 1, 5)
         if layout:
-            self._cells: dict = self._grid_editor.load_layout(layout)
+            self._cells: dict[str, ctk.CTkFrame] = self._grid_editor.load_layout(layout)
         else:
-            self._cells: dict = {}  #todo: provide the UI to create the layout from gridlayout
+            self._cells: dict[str, ctk.CTkFrame] = {}  #todo: provide the UI to create the layout from gridlayout
 
-    def add_tile(self, tile:"Tile_BM"):
-        self._tiles[tile.widget_str.split("!")[-1]] = tile
-        self._disconnected_tiles.append(tile)   #? with this case any new tiles won't be displayed until the next show page call
+        self._current_tile: bidict[ctk.CTkFrame, str] = bidict({cell: t_name for t_name, cell in self._cells.items()})
+        self._disconnected_tiles: list[str] = list(self._cells.keys())
+
+        for tile_name in self._disconnected_tiles:
+            if tile_name not in Chest.Manager.tiles:
+                class_name = tile_name.split("-")[0].lower()
+                Chest.Manager.tiles[tile_name] = Chest.Manager.classes_ref["tiles"][class_name]()
+                Tile_BM.get_tile(tile_name)._name = tile_name
 
     def update_width(self):
-        for tile in self._tiles.values():
-            tile.update_width()
+        for tile_name in self._current_tile.values():
+            Tile_BM.get_tile(tile_name).update_width()
         if self._displayed:
             threading.Thread(target=self._bg_thread_creator, daemon=True).start()
 
     def show_page(self):
         self._displayed = True
         self.place(relx=0, rely=0, relwidth=1, relheight=1)
-        for tile in self._disconnected_tiles:
-            print(f"showing tile {tile.widget_str.split('!')[-1]} in page {self.widget_str.split('!')[-1]}")
-            tile._process_pack_req(page=self)
+        for tile_name in self._disconnected_tiles:
+            Tile_BM.get_tile(tile_name)._process_pack_req(self._current_tile.inverse[tile_name])
         self._disconnected_tiles.clear()
-        for tile in self._tiles.values():
-            tile.lift()
-            tile._on_show_callbacks()
+        for tile_name in self._current_tile.values():
+            Tile_BM.get_tile(tile_name).lift()
+            Tile_BM.get_tile(tile_name)._on_show_callbacks()
         if not self._started:
             self._started = True
 
     def hide_page(self, event) -> bool:
-        results = [tile._on_leave_check(event) for tile in self._tiles.values()]
+        results = [Tile_BM.get_tile(tile_name)._on_leave_check(event) for tile_name in self._current_tile.values()]
         state = all(results)
         if state:
-            for tile in self._tiles.values():
-                tile._process_unpack_req()
+            for tile_name in self._current_tile.values():
+                Tile_BM.get_tile(tile_name)._process_unpack_req()
             self.place_forget()
             self._displayed = False
         return state
 
     def destroy_page(self):
-        for tile in self._tiles.values():
+        return #todo: recheck how this would go properly (a page can be in multiple windows at the same time)
+        for tile in self._tiles:
             tile.destroy_page()
 
     def _bg_thread_creator(self):
-        for page in {*Chest.MainPages.values(), *Chest.SubPages.values()} - {self}:     #todo: (only in TWM) subtract self.pages with self (if they exist as a main or sub page)
-            if page._started:                                                           #todo: (Global) add a `and not self._managed_by_tile` check, so that if it is managed by a tile manager don't update it from its own thread, since the tile manager will call its updating method for it.
+        for page in {*Chest.MainPages.values()} - {self}:
+            if page._started:
                 threading.Thread(target=page._bg_update, daemon=True).start()
 
     def _bg_update(self):
         openable = self.openable
         self.openable = False
         self.place(relx=0, rely=1, relwidth=1)
-        for tile in {*self._tiles.values()} - {*self._disconnected_tiles}:
-            tile._bg_update()
+        for tile_name in {*self._current_tile.values()} - {*self._disconnected_tiles}:
+            Tile_BM.get_tile(tile_name)._bg_update()
         self.place_forget()
         self.openable = openable
 
@@ -115,6 +119,7 @@ class Tile_BM(ctk.CTkFrame):
         super().__init__(self.parent, fg_color="transparent")
 
         self.widget_str = str(self)
+        self._name = self.widget_str.split("!")[-1]
         self.scrollable = scrollable
         self.openable = True            #? can the page be opened now or not
         self.opened = False             #? is Page currently opened or not
@@ -125,6 +130,9 @@ class Tile_BM(ctk.CTkFrame):
         self.scrollbar_inside:bool = scrollbar_inside
         # self._managed_by_tile:bool = False
         # self.tiling_manager:"TilingWindowManager" = None      #! shouldn't be needed
+
+        self._source_tile : dict[Page_BM, str] = {} #? source_tile._name for each page
+        self._linked_tiles: list[str] = []              #? linked_tiles._name
 
         self.starting_call_list = []
         self.picking_call_list = []
@@ -175,6 +183,10 @@ class Tile_BM(ctk.CTkFrame):
         self._busy = False
         self._current = None
 
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        Chest.Manager.classes_ref["tiles"][cls.__name__.lower()] = cls
+
     def _update_queue(func):
         def wrapper(self, *args, **kwargs):
             already_queued = any(name == func.__name__ for name, _ in self._queue)
@@ -200,8 +212,8 @@ class Tile_BM(ctk.CTkFrame):
 
     @_update_queue
     def update_width(self, page_switch=False):
-        print(f"updating width of tile {self.widget_str.split('!')[-1]}")
-        if self._is_width_fixed and not page_switch:
+        # print(f"updating width of tile {self.widget_str}. code {self._name} ")
+        if self._is_width_fixed and not page_switch:    #? Note: page_switch is always True on first `show_page` call
             return
 
         if self.scrollable:
@@ -209,6 +221,10 @@ class Tile_BM(ctk.CTkFrame):
             self.Scrollable_canvas.itemconfigure("frame", width=self.winfo_width()) # update frame width
         if self.pickable:
             self.Updating() # update widgets and user defined functions
+
+        #? temp disabled. to be checked later if we are gonna implement it. see below (_chain_update method)
+        # if Tile_BM.get_tile(self._current_page._current_tile[self._in_container]) == self and self.pickable:
+        #     threading.Thread(target=self._chain_thread_creator, daemon=True).start()
 
     @_update_queue
     def update_height(self, event):    #todo: a delay timer needs to be added here, so that if more than one item is being added the function isn't triggered untill all the items are added
@@ -235,7 +251,7 @@ class Tile_BM(ctk.CTkFrame):
         self.start_func()
 
     def Picking(self):
-        print("Picking called for", self.widget_str.split("!")[-1])
+        # print("Picking called for", self._name)
         self.menu_frame.place(relx=0.5, rely=0.5, anchor="center")
 
         for func in self.picking_call_list:
@@ -271,23 +287,37 @@ class Tile_BM(ctk.CTkFrame):
 
 
     #^ Show Page
-    def _process_pack_req(self, page:Page_BM):
+    def _process_pack_req(self, container:ctk.CTkFrame):
         # self.opened = True
-        page_change = page != self._current_page
+        page_change = container.master != self._current_page
         if page_change:
-            self._on_page_switch(page)
+            self._on_page_switch(container)
+        self._current_page._current_tile[self._in_container] = self._name
         self.pack(in_=self._in_container, side=self.container_pack_side, expand=True, fill="both")
         if page_change:
             self.opened = True
             self.update_width(page_change)
 
-    def _on_page_switch(self, page:Page_BM):
-        if self._current_page:
-            self._current_page._disconnected_tiles.append(self)
-        self._current_page = page
-        self._in_container = page._cells[self.widget_str.split("!")[-1]]
-        self._is_width_fixed = not page.layout["tiles"][self.widget_str.split("!")[-1].lower()].expandable
-        self.tile_func(page)
+    def _on_page_switch(self, container:ctk.CTkFrame):
+        if self._current_page is not None:
+            if self._current_page._current_tile[self._in_container] == self._name:
+                self._current_page._disconnected_tiles.append(self._name)
+            if self._source_tile[self._current_page] is not None:
+                Tile_BM.get_tile(self._source_tile[self._current_page])._linked_tiles.remove(self._name)
+
+        self._current_page = container.master
+        self._in_container = container
+        self._is_width_fixed = container.fixed_width
+
+        if self._current_page not in self._source_tile:
+            new_source = Tile_BM.get_tile(self._current_page._current_tile[container])
+            new_source = new_source._name if new_source != self else None
+            self._source_tile[self._current_page] = new_source
+        if self._source_tile[self._current_page] is not None and self._name not in Tile_BM.get_tile(self._source_tile[self._current_page])._linked_tiles:
+            Tile_BM.get_tile(self._source_tile[self._current_page])._linked_tiles.append(self._name)
+
+        # self._current_page._current_tile[self._in_container] = self._name
+        self.tile_func(self._current_page)
 
     def _on_show_callbacks(self):
         self.opened = True
@@ -296,8 +326,8 @@ class Tile_BM(ctk.CTkFrame):
         else:               # means that the page hasn't started yet
             self.Starting()
 
-    def show_page(self, page:Page_BM):
-        self._process_pack_req(page)
+    def show_page(self, container:ctk.CTkFrame):
+        self._process_pack_req(container)
         self._on_show_callbacks()
 
 
@@ -334,4 +364,66 @@ class Tile_BM(ctk.CTkFrame):
         # self.pack(in_=self._in_container, side=self.container_pack_side, expand=True, fill="both")
         self.update_width()
         # self.pack_forget()
+        self.openable = openable
+
+    def open_subpage(self, subpage:Union["Tile_BM", str]):
+        if isinstance(subpage, str):
+            if subpage.lower() not in Chest.Manager.tiles:
+                Chest.Manager.tiles[subpage.lower()] = Chest.Manager.classes_ref["tiles"][subpage.lower()]()
+            subpage = Tile_BM.get_tile(subpage)
+        if isinstance(subpage, Tile_BM) and (subpage._name not in Chest.Manager.tiles):
+            Chest.Manager.tiles[subpage._name] = subpage
+
+        if subpage.openable and self.hide_page("subpage.enter"):
+            current_width = subpage.winfo_width()
+            if (not self._in_container.fixed_width) and current_width != 1 and current_width != self._in_container.winfo_width():
+                subpage.place(in_=self._in_container, relx=0, rely=1, relwidth=1, relheight=1)
+                subpage.update_width()
+            subpage.show_page(self._in_container)
+
+    def return_to_source(self):
+        source = Tile_BM.get_tile(self._source_tile[self._current_page])
+        if source is not None and self.hide_page("subpage.leave"):
+            current_width = source.winfo_width()
+            if (not self._in_container.fixed_width) and current_width != 1 and current_width != self._in_container.winfo_width():
+                source.place(in_=self._in_container, relx=0, rely=1, relwidth=1, relheight=1)
+                source.update_width()
+            source.show_page(self._in_container)
+            return
+
+    def reload(self, *args, **kwargs):
+        class_name = self.__class__.__name__.lower()
+        Chest.Manager.classes_ref["tiles"][class_name] = Chest.Manager.ext_pages_importer(self, reload=True)
+        Chest.Manager.tiles[self._name] = Chest.Manager.classes_ref["tiles"][class_name](*args, **kwargs)
+
+        new_instance:"Tile_BM" = Tile_BM.get_tile(self._name)
+        new_instance._name = self._name
+        new_instance._source_tile  = self._source_tile  #? both `_current_page` and `_in_container` will be set by `on_page_switch`
+
+        is_opened = self.opened
+        self.destroy_page()
+        if is_opened:
+            new_instance.show_page(self._in_container)
+
+    @staticmethod
+    def get_tile(name: str) -> "Tile_BM":
+        return Chest.Manager.tiles[name.lower()]
+
+    #todo(NOT USED): check if we are gonna have background updates for linked tiles (probably not)
+    def _chain_thread_creator(self):
+        for tile_name in {*self._linked_tiles, *({self._source_tile[self._current_page]} if self._source_tile[self._current_page] is not None else ())}: #- {Chest.Manager.tiles[self._current_page._current_tile[self._in_container]]}:
+            tile = Tile_BM.get_tile(tile_name)
+            if tile.pickable:
+                tile._chain_update()
+
+    def _chain_update(self):
+        openable = self.openable
+        self.openable = False
+
+        self.place(relx=0, rely=1, relwidth=1)
+        # for tile in {*self._tiles} - {*self._disconnected_tiles}:
+            # tile._bg_update()
+        self.update_width()
+        self.place_forget()
+
         self.openable = openable
